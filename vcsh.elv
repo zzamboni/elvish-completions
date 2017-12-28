@@ -1,7 +1,7 @@
 # Completer for vcsh - https://github.com/RichiH/vcsh
 # Diego Zamboni <diego@zzamboni.org>
 
-use completer:git
+use github.com/zzamboni/completer.elv:git
 use re
 
 # Return all elements in $l1 except those who are already in $l2
@@ -17,7 +17,7 @@ fn vcsh-completer [cmd @rest]{
     cmds = [(vcsh 2>&1 | grep '^   [a-z-]' | grep -v ':$' | awk '{print $1}')]
     put $@repos $@cmds
   } elif (and (> $n 1) (has-value $repos $rest[0])) {
-    put (completer:git:git-completer $cmd" "$rest[0] (explode $rest[1:]))
+    put (completer.elv:git:git-completer $cmd" "$rest[0] (explode $rest[1:]))
   } elif (eq $n 2) {
     # Subcommand- or option-specific completions
     if (eq $rest[0] "-c") {
