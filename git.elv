@@ -19,10 +19,14 @@ fn -run-git-cmd [gitcmd @rest]{
   if (eq (kind-of $gitcmd) string) {
     gitcmds = [(splits " " $gitcmd)]
   }
+  cmd = $gitcmds[0]
+  if (eq (kind-of $cmd) string) {
+    cmd = (resolve $cmd)
+  }
   if (> (count $gitcmds) 1) {
-    $gitcmds[0] (explode $gitcmds[1:]) $@rest
+    $cmd (explode $gitcmds[1:]) $@rest
   } else {
-    $gitcmds[0] $@rest
+    $cmd $@rest
   }
 }
 
@@ -44,3 +48,5 @@ fn git-completer [gitcmd @rest]{
     }
   }
 }
+
+edit:arg-completer[git] = $git-completer~
