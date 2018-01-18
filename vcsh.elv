@@ -1,7 +1,7 @@
 # Completer for vcsh - https://github.com/RichiH/vcsh
 # Diego Zamboni <diego@zzamboni.org>
 
-use github.com/zzamboni/completer.elv:git
+use ./git
 use re
 
 # Return all elements in $l1 except those who are already in $l2
