@@ -1,3 +1,5 @@
+use re
+
 edit:arg-completer[cd] = [@cmd]{
   if (> (count $cmd) 2) {
     return

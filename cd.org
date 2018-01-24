@@ -9,6 +9,8 @@ originally posted at https://0x0.st/sqKT.txt and included in this
 package with permission.
 
 #+BEGIN_SRC elvish
+  use re
+
   edit:arg-completer[cd] = [@cmd]{
     if (> (count $cmd) 2) {
       return
