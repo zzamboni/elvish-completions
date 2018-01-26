@@ -4,9 +4,8 @@
 #+TITLE:  Git completions for cd
 #+AUTHOR: occivink
 
-This code was written by @occivink (from the [[https://webchat.freenode.net/?channels=elvish][#elvish]] IRC channel),
-originally posted at https://0x0.st/sqKT.txt and included in this
-package with permission.
+This code was written by [[https://github.com/occivink][occivink]], originally posted at
+https://0x0.st/sqKT.txt and included in this package with permission.
 
 #+BEGIN_SRC elvish
   use re
