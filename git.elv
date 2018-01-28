@@ -5,7 +5,7 @@
 # Fetch list of valid git commands and aliases from git itself
 -cmds = [
   ((resolve git) help -a | grep '^  [a-z]' | tr -s "[:blank:]" "\n" | each [x]{ if (> (count $x) 0) { put $x } })
-  ((resolve git) config --list | grep alias | sed 's/^alias\.//; s/=.*$//')
+  (err = ?((resolve git) config --list | grep alias | sed 's/^alias\.//; s/=.*$//'))
 ]
 commands = [(echo &sep="\n" $@-cmds | sort)]
 
