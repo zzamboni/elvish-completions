@@ -12,8 +12,8 @@
 
   # Fetch list of valid git commands and aliases from git itself
   -cmds = [
-    ((resolve git) help -a | grep '^  [a-z]' | tr -s "[:blank:]" "\n" | each [x]{ if (> (count $x) 0) { put $x } })
-    (err = ?((resolve git) config --list | grep alias | sed 's/^alias\.//; s/=.*$//'))
+    ((external git) help -a | grep '^  [a-z]' | tr -s "[:blank:]" "\n" | each [x]{ if (> (count $x) 0) { put $x } })
+    (err = ?((external git) config --list | grep alias | sed 's/^alias\.//; s/=.*$//'))
   ]
   commands = [(echo &sep="\n" $@-cmds | sort)]
 
@@ -29,7 +29,7 @@
     }
     cmd = $gitcmds[0]
     if (eq (kind-of $cmd) string) {
-      cmd = (resolve $cmd)
+      cmd = (external $cmd)
     }
     if (> (count $gitcmds) 1) {
       $cmd (explode $gitcmds[1:]) $@rest
