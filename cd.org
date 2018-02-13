@@ -1,28 +1,22 @@
 #+PROPERTY: header-args:elvish :tangle cd.elv
-#+PROPERTY: header-args :mkdirp yes :comments no 
+#+PROPERTY: header-args :mkdirp yes :comments no
 
 #+TITLE:  Git completions for cd
-#+AUTHOR: occivink
+#+AUTHOR: occivink, SolitudeSF
 
-This code was written by [[https://github.com/occivink][occivink]], originally posted at
-https://0x0.st/sqKT.txt and included in this package with permission.
+This code was originally written by [[https://github.com/occivink][occivink]] and posted at
+https://0x0.st/sqKT.txt and included in this package with
+permission. Improved version by SolitudeSF.
 
 #+BEGIN_SRC elvish
-  use re
-
   edit:arg-completer[cd] = [@cmd]{
     if (> (count $cmd) 2) {
       return
     }
-    prefix=
-    if (== (count $cmd) 2) {
-      prefix=$cmd[1]
-    }
-    matches=[$prefix*[nomatch-ok]]
-    if (>= (count $matches) 1) {
-      put (ls -p -L -d $@matches) |
-      each [i]{ if (re:match '/$' $i) { put $i } } |
-      each [dir]{ edit:complex-candidate $dir &style="blue;bold" }
+    put $cmd[1]*[match-hidden][nomatch-ok] | each [x]{
+      if (-is-dir $x) {
+        edit:complex-candidate &code-suffix=/ &style='blue;bold' $x
+      }
     }
   }
 #+END_SRC
