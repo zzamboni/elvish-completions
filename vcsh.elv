@@ -17,7 +17,7 @@ fn vcsh-completer [cmd @rest]{
     cmds = [(vcsh 2>&1 | grep '^   [a-z-]' | grep -v ':$' | awk '{print $1}')]
     put $@repos $@cmds
   } elif (and (> $n 1) (has-value $repos $rest[0])) {
-    put (completer.elv:git:git-completer $cmd" "$rest[0] (explode $rest[1:]))
+    put (git:git-completer $cmd" "$rest[0] (explode $rest[1:]))
   } elif (eq $n 2) {
     # Subcommand- or option-specific completions
     if (eq $rest[0] "-c") {
