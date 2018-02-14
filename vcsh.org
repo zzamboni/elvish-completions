@@ -1,11 +1,11 @@
-#+PROPERTY: header-args:elvish :tangle vcsh.elv
-#+PROPERTY: header-args :mkdirp yes :comments no
+#+property: header-args:elvish :tangle vcsh.elv
+#+property: header-args :mkdirp yes :comments no
 
-#+TITLE:  Vcsh completions for Elvish
-#+AUTHOR: Diego Zamboni
-#+EMAIL:  diego@zzamboni.org
+#+title: Vcsh completions for Elvish
+#+author: Diego Zamboni
+#+email: diego@zzamboni.org
 
-#+BEGIN_SRC elvish
+#+begin_src elvish
   # Completer for vcsh - https://github.com/RichiH/vcsh
   # Diego Zamboni <diego@zzamboni.org>
 
@@ -46,4 +46,4 @@
   }
 
   edit:arg-completer[vcsh] = $vcsh-completer~
-#+END_SRC
+#+end_src

@@ -1,11 +1,11 @@
-#+PROPERTY: header-args:elvish :tangle git.elv
-#+PROPERTY: header-args :mkdirp yes :comments no 
+#+property: header-args:elvish :tangle git.elv
+#+property: header-args :mkdirp yes :comments no
 
-#+TITLE:  Git completions for Elvish
-#+AUTHOR: Diego Zamboni
-#+EMAIL:  diego@zzamboni.org
+#+title: Git completions for Elvish
+#+author: Diego Zamboni
+#+email: diego@zzamboni.org
 
-#+BEGIN_SRC elvish
+#+begin_src elvish
   # Completion for git (or tools which allow git commands to be passed, like vcsh)
   # Diego Zamboni <diego@zzamboni.org>
   # Some code from https://github.com/occivink/config/blob/master/.elvish/rc.elv
@@ -58,4 +58,4 @@
   }
 
   edit:arg-completer[git] = $git-completer~
-#+END_SRC
+#+end_src
