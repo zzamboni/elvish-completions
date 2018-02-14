@@ -1,7 +1,7 @@
 #+property: header-args:elvish :tangle vcsh.elv
 #+property: header-args :mkdirp yes :comments no
 
-#+title: Vcsh completions for Elvish
+#+title: Elvish completions for vcsh
 #+author: Diego Zamboni
 #+email: diego@zzamboni.org
 

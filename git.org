@@ -1,7 +1,7 @@
 #+property: header-args:elvish :tangle git.elv
 #+property: header-args :mkdirp yes :comments no
 
-#+title: Git completions for Elvish
+#+title: Elvish completions for git
 #+author: Diego Zamboni
 #+email: diego@zzamboni.org
 

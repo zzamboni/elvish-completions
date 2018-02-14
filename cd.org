@@ -1,7 +1,7 @@
 #+property: header-args:elvish :tangle cd.elv
 #+property: header-args :mkdirp yes :comments no
 
-#+title: Git completions for cd
+#+title: Elvish completions for cd
 #+author: occivink, SolitudeSF
 
 This code was originally written by [[https://github.com/occivink][occivink]] and posted at
