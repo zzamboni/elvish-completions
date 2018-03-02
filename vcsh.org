@@ -45,5 +45,5 @@
     }
   }
 
-  edit:arg-completer[vcsh] = $vcsh-completer~
+  edit:completion:arg-completer[vcsh] = $vcsh-completer~
 #+end_src

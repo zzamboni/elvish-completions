@@ -9,7 +9,7 @@ https://0x0.st/sqKT.txt and included in this package with
 permission. Improved version by SolitudeSF.
 
 #+begin_src elvish
-  edit:arg-completer[cd] = [@cmd]{
+  edit:completion:arg-completer[cd] = [@cmd]{
     if (> (count $cmd) 2) {
       return
     }

@@ -57,5 +57,5 @@
     }
   }
 
-  edit:arg-completer[git] = $git-completer~
+  edit:completion:arg-completer[git] = $git-completer~
 #+end_src

@@ -1,4 +1,4 @@
-edit:arg-completer[cd] = [@cmd]{
+edit:completion:arg-completer[cd] = [@cmd]{
   if (> (count $cmd) 2) {
     return
   }

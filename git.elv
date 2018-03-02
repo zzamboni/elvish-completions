@@ -49,4 +49,4 @@ fn git-completer [gitcmd @rest]{
   }
 }
 
-edit:arg-completer[git] = $git-completer~
+edit:completion:arg-completer[git] = $git-completer~
