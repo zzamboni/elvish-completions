@@ -45,6 +45,9 @@ fn git-completer [gitcmd @rest]{
       -run-git-cmd $gitcmd diff --name-only
     } elif (or (eq $subcommand mv) (eq $subcommand rm) (eq $subcommand diff)) {
       -run-git-cmd $gitcmd ls-files
+    } elif (or (eq $subcommand push)) {
+      remotes = (-run-git-cmd $gitcmd remote -v | cut -f1 | sort | uniq)
+      put $remotes
     }
   }
 }
