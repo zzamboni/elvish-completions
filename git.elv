@@ -51,6 +51,8 @@ fn git-completer [gitcmd @rest]{
       } else {
         -run-git-cmd $gitcmd branch --list --format '%(refname:short)'
       }
+    } elif (or (eq $subcommand merge)) {
+      -run-git-cmd $gitcmd branch --list --format '%(refname:short)'
     }
   }
 }
