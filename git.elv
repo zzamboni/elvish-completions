@@ -49,7 +49,7 @@ fn git-completer [gitcmd @rest]{
       if (eq $n 2) {
         -run-git-cmd $gitcmd remote
       } else {
-        -run-git-cmd $gitcmd branch --list --all --format '%(refname:short)'
+        -run-git-cmd $gitcmd branch --list --format '%(refname:short)'
       }
     }
   }
