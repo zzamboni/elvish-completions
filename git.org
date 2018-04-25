@@ -53,6 +53,12 @@
         -run-git-cmd $gitcmd diff --name-only
       } elif (or (eq $subcommand mv) (eq $subcommand rm) (eq $subcommand diff)) {
         -run-git-cmd $gitcmd ls-files
+      } elif (or (eq $subcommand push)) {
+        if (eq $n 2) {
+          -run-git-cmd $gitcmd remote
+        } else {
+          -run-git-cmd $gitcmd branch --list --all --format '%(refname:short)'
+        }
       }
     }
   }

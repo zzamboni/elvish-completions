@@ -46,8 +46,11 @@ fn git-completer [gitcmd @rest]{
     } elif (or (eq $subcommand mv) (eq $subcommand rm) (eq $subcommand diff)) {
       -run-git-cmd $gitcmd ls-files
     } elif (or (eq $subcommand push)) {
-      remotes = (-run-git-cmd $gitcmd remote -v | cut -f1 | sort | uniq)
-      put $remotes
+      if (eq $n 2) {
+        -run-git-cmd $gitcmd remote
+      } else {
+        -run-git-cmd $gitcmd branch --list --all --format '%(refname:short)'
+      }
     }
   }
 }
