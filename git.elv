@@ -1,19 +1,15 @@
-# Completion for git (or tools which allow git commands to be passed, like vcsh)
-# Diego Zamboni <diego@zzamboni.org>
-# Some code from https://github.com/occivink/config/blob/master/.elvish/rc.elv
+use ./comp
+use re
+use github.com/muesli/elvish-libs/git
+use github.com/zzamboni/elvish-modules/util
 
-# Fetch list of valid git commands and aliases from git itself
--cmds = [
-  (git help -a | grep '^  [a-z]' | tr -s "[:blank:]" "\n" | each [x]{ if (> (count $x) 0) { put $x } })
-  (err = ?(git config --list | grep alias | sed 's/^alias\.//; s/=.*$//'))
-]
-commands = [(echo &sep="\n" $@-cmds | sort)]
+-cmds = [ (git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } }) ]
+aliases = [(git config --list | each [line]{
+      if (re:match '^alias\.' $line) { re:replace '^alias\.([^=]+)=.*$' '${1}' $line }
+})]
+commands = [$@-cmds $@aliases]
+status = [&]
 
-# This allows $gitcmd to be a multi-word command and still be executed
-# correctly. We cannot simply run "$gitcmd <opts>" because Elvish always
-# interprets the first token (the head) to be the command.
-# One example of a multi-word $gitcmd is "vcsh <repo>", after which
-# any git subcommand is valid.
 fn -run-git-cmd [gitcmd @rest]{
   gitcmds = [$gitcmd]
   if (eq (kind-of $gitcmd) string) {
@@ -30,31 +26,31 @@ fn -run-git-cmd [gitcmd @rest]{
   }
 }
 
+fn MODIFIED-FILES  { explode $status[local-modified] }
+fn UNTRACKED-FILES { explode $status[untracked] }
+fn TRACKED-FILES   { git ls-files }
+fn BRANCHES        { git branch --list --all --format '%(refname:short)' }
+fn REMOTES         { git remote }
+
+git-completions = [
+  &-opts= [
+    (man git | each [l]{
+        re:find '(--\w[\w-]*)' $l; re:find '\s(-\w)\W' $l
+    })[groups][1][text]
+  ]
+  &add=      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
+  &stage=    add
+  &checkout= [ { MODIFIED-FILES; BRANCHES }        ]
+  &mv=       [ $TRACKED-FILES~                     ]
+  &rm=       mv
+  &diff=     rm
+  &push=     [ $REMOTES~ $BRANCHES~                ]
+  &merge=    [ $BRANCHES~                          ]
+]
+
 fn git-completer [gitcmd @rest]{
-  n = (count $rest)
-  if (eq $n 1) {
-    put $@commands
-  } else {
-    # From https://github.com/occivink/config/blob/master/.elvish/rc.elv
-    subcommand = $rest[0]
-    if (or (eq $subcommand add) (eq $subcommand stage)) {
-      -run-git-cmd $gitcmd diff --name-only
-      -run-git-cmd $gitcmd ls-files --others --exclude-standard
-    } elif (or (eq $subcommand checkout) (eq $subcommand co)) {
-      -run-git-cmd $gitcmd branch --list --all --format '%(refname:short)'
-      -run-git-cmd $gitcmd diff --name-only
-    } elif (or (eq $subcommand mv) (eq $subcommand rm) (eq $subcommand diff)) {
-      -run-git-cmd $gitcmd ls-files
-    } elif (or (eq $subcommand push)) {
-      if (eq $n 2) {
-        -run-git-cmd $gitcmd remote
-      } else {
-        -run-git-cmd $gitcmd branch --list --format '%(refname:short)'
-      }
-    } elif (or (eq $subcommand merge)) {
-      -run-git-cmd $gitcmd branch --list --format '%(refname:short)'
-    }
-  }
+  status = (git:status)
+  comp:subcommands $git-completions $gitcmd $@rest
 }
 
 edit:completion:arg-completer[git] = $git-completer~

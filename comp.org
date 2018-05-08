@@ -1,0 +1,107 @@
+#+TITLE:  Completion framework for Elvish
+#+AUTHOR: Diego Zamboni
+#+EMAIL:  diego@zzamboni.org
+
+This module provides a few handy functions that make it easier to define completions in Elvish.
+
+This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:comp.elv][comp.elv]] for the generated file.
+
+* Table of Contents                                            :TOC:noexport:
+- [[#usage][Usage]]
+- [[#implementation][Implementation]]
+
+* Usage
+
+Install the =elvish-completions= package using [[https://elvish.io/ref/epm.html][epm]]:
+
+#+begin_src elvish
+  use epm
+  epm:install github.com/zzamboni/elvish-completions
+#+end_src
+
+In your =rc.elv=, load this module:
+
+#+begin_src elvish
+  use github.com/zzamboni/elvish-completions/comp
+#+end_src
+
+The =comp:subcommands= function does simple subcomand-completion for commands such as =git=. It receives the following arguments:
+
+- =$def= is a map containing the completion definitions. Each index is a subcommand, and its value is an array in which each element can be either a function that returns the possible completions at that point, an array containing textual possible completions at that point, or a string which refers to another subcommand which defines the completions to use (think of command aliases in =git=). The map may contain an entry with the index =-opts=. If present, it should be an array or a function containing possible options at the top level (to appear before a subcommand). Example (see  https://github.com/zzamboni/elvish-completions/blob/master/git.org for the full code, including the definition of the functions that get called):
+  #+begin_src elvish
+    git-completions = [
+      &-opts= [
+        (man git | each [l]{
+            re:find '(--\w[\w-]*)' $l; re:find '\s(-\w)\W' $l
+        })[groups][1][text]
+      ]
+      &add=      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
+      &stage=    add
+      &checkout= [ { MODIFIED-FILES; BRANCHES }        ]
+      &mv=       [ $TRACKED-FILES~                     ]
+      &rm=       mv
+      &diff=     mv
+      &push=     [ $REMOTES~ $BRANCHES~                ]
+      &merge=    [ $BRANCHES~                          ]
+    ]
+  #+end_src
+
+- =@cmd= is the current command line, as passed to regular [[https://elvish.io/ref/edit.html#completion-api][completion functions]].
+
+For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elvish-completions/blob/master/git.org][git completer]] as follows:
+
+#+begin_src elvish
+  fn git-completer [gitcmd @rest]{
+    status = (git:status)
+    comp:subcommands $git-completions $gitcmd $@rest
+  }
+
+  edit:completion:arg-completer[git] = $git-completer~
+#+end_src
+
+* Implementation
+:PROPERTIES:
+:header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) ".elv")
+:header-args: :mkdirp yes :comments no
+:END:
+
+#+begin_src elvish
+  use github.com/zzamboni/elvish-modules/util
+#+end_src
+
+#+begin_src elvish
+  fn -def-item [def item]{
+    if (has-key $def $item) {
+      what = (kind-of $def[$item])
+      if (eq $what 'fn') {
+        $def[$item]
+      } elif (eq $what 'list') {
+        explode $def[$item]
+      }
+    }
+  }
+#+end_src
+
+#+begin_src elvish
+  fn subcommands [def @cmd]{
+    n = (count $cmd)
+    echo def= $def n= $n cmd= '[' $@cmd ']' >> /tmp/log
+    if (eq $n 2) {
+      keys (dissoc $def -opts)
+      if (has-key $def -opts) {
+        -def-item $def -opts
+      }
+    } else {
+      subcommand = $cmd[1]
+      echo subcommand= $subcommand >> /tmp/log
+      if (has-key $def $subcommand) {
+        if (eq (kind-of $def[$subcommand]) 'string') {
+          subcommands $def $cmd[0] $def[$subcommand] (explode $cmd[2:])
+        } else {
+          echo 'def[' $subcommand ']=' $def[$subcommand] >> /tmp/log
+          -def-item $def[$subcommand] (util:min (- $n 3) (- (count $def[$subcommand]) 1))
+        }
+      }
+    }
+  }
+#+end_src
