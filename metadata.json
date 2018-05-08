@@ -2,5 +2,4 @@
   "description": "zzamboni's Elvish completion definitions",
   "maintainers": ["Diego Zamboni <diego@zzamboni.org>"],
   "dependencies": ["github.com/zzamboni/elvish-modules", "github.com/muesli/elvish-libs"]
-
 }
