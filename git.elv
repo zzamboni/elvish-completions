@@ -34,10 +34,9 @@ fn REMOTES         { git remote }
 
 git-completions = [
   &-opts= [
-    (man git | each [l]{
-        re:find '(--\w[\w-]*)' $l; re:find '\s(-\w)\W' $l
-    })[groups][1][text]
-  ]
+    (git --help | each [l]{
+        re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
+    })[groups][1][text]]
   &add=      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
   &stage=    add
   &checkout= [ { MODIFIED-FILES; BRANCHES }        ]
