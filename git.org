@@ -31,23 +31,48 @@ In your =rc.elv=, load this module:
 :header-args: :mkdirp yes :comments no
 :END:
 
-We fetch the list of valid git commands and aliases from git itself, so that it is automatically up to date. We store aliases separately so we can check their definitions and use the completions for the corresponding commands when appropriate, but generate a big list with everything for the full completion.
+We first load a number of libraries, including =comp=, the Elvish completion framework.
 
 #+begin_src elvish
   use ./comp
   use re
   use github.com/muesli/elvish-libs/git
   use github.com/zzamboni/elvish-modules/util
+#+end_src
 
+This is where the big completion-definition map will get build up progressively below.
+
+#+begin_src elvish
+  completions = [&]
+#+end_src
+
+We fetch the list of valid git commands =git help -a= itself, so that it is automatically up to date. Initially all of them are stored in the =completions= array with an empty list as value, which denotes no completions for that command (although the commands themselves will be completed).
+
+#+begin_src elvish
   -cmds = [ (git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } }) ]
-  aliases = [(git config --list | each [line]{
-        if (re:match '^alias\.' $line) { re:replace '^alias\.([^=]+)=.*$' '${1}' $line }
-  })]
-  commands = [$@-cmds $@aliases]
+  each [c]{ completions[$c] = [] } $-cmds
+#+end_src
+
+We parse the defined aliases from the output of =git config --list=. We store the aliases in =completions= as well, but we check: if an alias points to another command which is also there, we store the name of the target command as its value, which =comp:subcommands= interprets as "use the completions from the target command".
+
+#+begin_src elvish
+  -aliases = [(git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l })[groups][1 2][text]]
+  put $-aliases[(range (count $-aliases) &step=2 | each [x]{ put $x':'(+ $x 2) })] | each [p]{
+    if (has-key $completions $p[1]) {
+      completions[$p[0]] = $p[1]
+    } else {
+      completions[$p[0]] = []
+    }
+  }
+#+end_src
+
+We store the output of =git:status= in a global variable to make it easier to access by the different completion functions.
+
+#+begin_src elvish
   status = [&]
 #+end_src
 
-The =-run-git-cmd= function executes a git-like command, with the given arguments.  =$gitcmd= can be a multi-word command and still be executed correctly. We cannot simply run =$gitcmd $@rest= because Elvish always interprets the first token (the head) to be the command.  One example of a multi-word =$gitcmd= is ="vcsh <repo>"=, after which any git subcommand is valid.
+The =-run-git-cmd= function executes a git-like command, with the given arguments.  =$gitcmd= can be a single command, a multi-word command or a function and still be executed correctly. We cannot simply run =$gitcmd $@rest= because Elvish always interprets the first token (the head) to be the command.  One example of a multi-word =$gitcmd= is ="vcsh <repo>"=, after which any git subcommand is valid.
 
 #+begin_src elvish
   fn -run-git-cmd [gitcmd @rest]{
@@ -59,15 +84,11 @@ The =-run-git-cmd= function executes a git-like command, with the given argument
     if (eq (kind-of $cmd) string) {
       cmd = (external $cmd)
     }
-    if (> (count $gitcmds) 1) {
-      $cmd (explode $gitcmds[1:]) $@rest
-    } else {
-      $cmd $@rest
-    }
+    $cmd (explode $gitcmds[1:]) $@rest
   }
 #+end_src
 
-We define the functions that return different possible values for completions.
+We define the functions that return different possible values for completions. These functions assume that =$status= contains already the output from =git:status=, which gets executed by =git-completer= below.
 
 #+begin_src elvish
   fn MODIFIED-FILES  { explode $status[local-modified] }
@@ -77,31 +98,40 @@ We define the functions that return different possible values for completions.
   fn REMOTES         { git remote }
 #+end_src
 
-
-The =$git-completions= variable contains the git subcommands for which we have completions. Each element is indexed by the git subcommand, and its value is a sequence of functions which return the possible completions at that point in the command.
+We add to =$completions= the git commands for which we have completions. Each element is indexed by the git subcommand, and its value is a sequence of functions which return the possible completions at that point in the command.
 
 #+begin_src elvish
-  git-completions = [
-    &-opts= [
-      (git --help | each [l]{
-          re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
-      })[groups][1][text]]
-    &add=      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
-    &stage=    add
-    &checkout= [ { MODIFIED-FILES; BRANCHES }        ]
-    &mv=       [ $TRACKED-FILES~                     ]
-    &rm=       mv
-    &diff=     rm
-    &push=     [ $REMOTES~ $BRANCHES~                ]
-    &merge=    [ $BRANCHES~                          ]
+    completions[add] =      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
+    completions[stage] =    add
+    completions[checkout] = [ { MODIFIED-FILES; BRANCHES }        ]
+    completions[mv] =       [ $TRACKED-FILES~                     ]
+    completions[rm] =       mv
+    completions[diff] =     rm
+    completions[push] =     [ $REMOTES~ $BRANCHES~                ]
+    completions[merge] =    [ $BRANCHES~                          ]
+#+end_src
+
+We also store in =$completions= the list of global git options, extracted from the output of =git --help=.
+
+#+begin_src elvish
+  completions[-opts] = [
+    (git --help | each [l]{
+        re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
+    })[groups][1][text]
   ]
 #+end_src
+
+Finally, we define =git-completer= to simply fetch the current git status information, and call =comp:subcommands= with out completion definitions.
 
 #+begin_src elvish
   fn git-completer [gitcmd @rest]{
     status = (git:status)
-    comp:subcommands $git-completions $gitcmd $@rest
+    comp:subcommands $completions $gitcmd $@rest
   }
+#+end_src
 
+We initialize the completions by assigning the function to the corresponding element of =$edit:completion:arg-completer=. Note that =git:completer= can also be used to complete for other commands which accept git-like commands, such as =vcsh=.
+
+#+begin_src elvish
   edit:completion:arg-completer[git] = $git-completer~
 #+end_src

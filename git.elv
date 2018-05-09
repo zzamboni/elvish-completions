@@ -3,11 +3,20 @@ use re
 use github.com/muesli/elvish-libs/git
 use github.com/zzamboni/elvish-modules/util
 
+completions = [&]
+
 -cmds = [ (git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } }) ]
-aliases = [(git config --list | each [line]{
-      if (re:match '^alias\.' $line) { re:replace '^alias\.([^=]+)=.*$' '${1}' $line }
-})]
-commands = [$@-cmds $@aliases]
+each [c]{ completions[$c] = [] } $-cmds
+
+-aliases = [(git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l })[groups][1 2][text]]
+put $-aliases[(range (count $-aliases) &step=2 | each [x]{ put $x':'(+ $x 2) })] | each [p]{
+  if (has-key $completions $p[1]) {
+    completions[$p[0]] = $p[1]
+  } else {
+    completions[$p[0]] = []
+  }
+}
+
 status = [&]
 
 fn -run-git-cmd [gitcmd @rest]{
@@ -19,11 +28,7 @@ fn -run-git-cmd [gitcmd @rest]{
   if (eq (kind-of $cmd) string) {
     cmd = (external $cmd)
   }
-  if (> (count $gitcmds) 1) {
-    $cmd (explode $gitcmds[1:]) $@rest
-  } else {
-    $cmd $@rest
-  }
+  $cmd (explode $gitcmds[1:]) $@rest
 }
 
 fn MODIFIED-FILES  { explode $status[local-modified] }
@@ -32,24 +37,24 @@ fn TRACKED-FILES   { git ls-files }
 fn BRANCHES        { git branch --list --all --format '%(refname:short)' }
 fn REMOTES         { git remote }
 
-git-completions = [
-  &-opts= [
-    (git --help | each [l]{
-        re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
-    })[groups][1][text]]
-  &add=      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
-  &stage=    add
-  &checkout= [ { MODIFIED-FILES; BRANCHES }        ]
-  &mv=       [ $TRACKED-FILES~                     ]
-  &rm=       mv
-  &diff=     rm
-  &push=     [ $REMOTES~ $BRANCHES~                ]
-  &merge=    [ $BRANCHES~                          ]
+completions[add] =      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
+completions[stage] =    add
+completions[checkout] = [ { MODIFIED-FILES; BRANCHES }        ]
+completions[mv] =       [ $TRACKED-FILES~                     ]
+completions[rm] =       mv
+completions[diff] =     rm
+completions[push] =     [ $REMOTES~ $BRANCHES~                ]
+completions[merge] =    [ $BRANCHES~                          ]
+
+completions[-opts] = [
+  (git --help | each [l]{
+      re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
+  })[groups][1][text]
 ]
 
 fn git-completer [gitcmd @rest]{
   status = (git:status)
-  comp:subcommands $git-completions $gitcmd $@rest
+  comp:subcommands $completions $gitcmd $@rest
 }
 
 edit:completion:arg-completer[git] = $git-completer~
