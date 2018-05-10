@@ -27,12 +27,12 @@ In your =rc.elv=, load this module:
 
 The =comp:subcommands= function does simple subcomand-completion for commands such as =git=. It receives the following arguments:
 
-- =$def= is a map containing the completion definitions. Each index is a subcommand, and its value is an array in which each element can be either a function that returns the possible completions at that point, an array containing textual possible completions at that point, or a string which refers to another subcommand which defines the completions to use (think of command aliases in =git=). The map may contain an entry with the index =-opts=. If present, it should be an array or a function containing possible options at the top level (to appear before a subcommand). Example (see  https://github.com/zzamboni/elvish-completions/blob/master/git.org for the full code, including the definition of the functions that get called):
+- =$def= is a map containing the completion definitions. Each index is a subcommand, and its value is an array in which each element can be either a function that returns the possible completions at that point, an array containing textual possible completions at that point, or a string which refers to another subcommand which defines the completions to use (think of command aliases in =git=). The map may contain an entry with the index =-opts=. If present, it should be an array or a function containing possible options at the top level (to appear before a subcommand). Here is a simplified example from the [[https://github.com/zzamboni/elvish-completions/blob/master/git.org][git completions]] (see that file for the full code, including the definition of the functions that get called):
   #+begin_src elvish
     git-completions = [
       &-opts= [
-        (man git | each [l]{
-            re:find '(--\w[\w-]*)' $l; re:find '\s(-\w)\W' $l
+        (git --help | each [l]{
+            re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
         })[groups][1][text]
       ]
       &add=      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
@@ -69,8 +69,10 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
   use github.com/zzamboni/elvish-modules/util
 #+end_src
 
+=expand-completion-item= expands a single element into its completion values. If it's a function, it gets executed. If it's a list, it's exploded.
+
 #+begin_src elvish
-  fn -def-item [def item]{
+  fn expand-completion-item [def item]{
     if (has-key $def $item) {
       what = (kind-of $def[$item])
       if (eq $what 'fn') {
@@ -82,24 +84,33 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
   }
 #+end_src
 
+=comp:subcommands= receives a definition map and the current contents of the command line.
+
 #+begin_src elvish
   fn subcommands [def @cmd]{
     n = (count $cmd)
-    echo def= $def n= $n cmd= '[' $@cmd ']' >> /tmp/log
+#+end_src
+
+If completion for the top-level subcommand is expected (=eq $n 2=), the top-level indices plus the global options (if provided in the =-opts= element).
+
+#+begin_src elvish
     if (eq $n 2) {
       keys (dissoc $def -opts)
       if (has-key $def -opts) {
-        -def-item $def -opts
+        expand-completion-item $def -opts
       }
+#+end_src
+
+Otherwise, depending on the subcommand already provided, the corresponding element of the corresponding definition list is expanded. If the element is a string, it is considered and alias, so we call =subcommands= with the target command.
+
+#+begin_src elvish
     } else {
       subcommand = $cmd[1]
-      echo subcommand= $subcommand >> /tmp/log
       if (has-key $def $subcommand) {
         if (eq (kind-of $def[$subcommand]) 'string') {
           subcommands $def $cmd[0] $def[$subcommand] (explode $cmd[2:])
         } else {
-          echo 'def[' $subcommand ']=' $def[$subcommand] >> /tmp/log
-          -def-item $def[$subcommand] (util:min (- $n 3) (- (count $def[$subcommand]) 1))
+          expand-completion-item $def[$subcommand] (util:min (- $n 3) (- (count $def[$subcommand]) 1))
         }
       }
     }
