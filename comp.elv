@@ -11,6 +11,11 @@ fn expand-completion-item [def item]{
   }
 }
 
+fn sequence [def @cmd]{
+  n = (count $cmd)
+  expand-completion-item $def (util:min (- $n 2) (- (count $def) 1))
+}
+
 fn subcommands [def @cmd]{
   n = (count $cmd)
 
@@ -26,7 +31,7 @@ if (eq $n 2) {
       if (eq (kind-of $def[$subcommand]) 'string') {
         subcommands $def $cmd[0] $def[$subcommand] (explode $cmd[2:])
       } else {
-        expand-completion-item $def[$subcommand] (util:min (- $n 3) (- (count $def[$subcommand]) 1))
+        sequence $def[$subcommand] (explode $cmd[1:])
       }
     }
   }
