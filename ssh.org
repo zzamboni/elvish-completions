@@ -27,6 +27,20 @@ In your =rc.elv=, load this module:
   use github.com/zzamboni/elvish-completions/ssh
 #+end_src
 
+Hosts for the completions will be read from the files listed in the =$config-files= variable. Here is its default value:
+
+#+begin_src elvish :noweb-ref config-files
+  config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
+#+end_src
+
+All hosts listed in =Host= sections of the config files will be provided for completion. Patterns including any metacharacters (=*=, =?= and =!=) will not be shown.
+
+#+begin_example
+[~]─> ssh <tab>
+ COMPLETING argument
+ host1                host2                  host3
+#+end_example
+
 * Implementation
 :PROPERTIES:
 :header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) ".elv")
@@ -50,8 +64,8 @@ This is where the big completion-definition map will get build up progressively 
 
 List of config files from which to extract hostnames.
 
-#+begin_src elvish
-  config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
+#+begin_src elvish :noweb yes
+  <<config-files>>
 #+end_src
 
 ** Initialization
