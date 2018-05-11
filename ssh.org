@@ -41,6 +41,17 @@ All hosts listed in =Host= sections of the config files will be provided for com
  host1                host2                  host3
 #+end_example
 
+Completions are also provided for config options. If you type =-o<space>=  and press ~Tab~, a list of valid configuration options will be provided. The valid configuration options are automatically extracted from the =ssh_config= man page, if it's available.
+
+#+begin_example
+[~]─> ssh -o <tab>
+ COMPLETING argument _
+ AddKeysToAgent=                   ControlPath=                HostKeyAlias=                  NoHostAuthenticationForLocalhost=  ServerAliveCountMax=
+ AddressFamily=                    ControlPersist=             HostName=                      NumberOfPasswordPrompts=           ServerAliveInterval=
+ BatchMode=                        DynamicForward=             HostbasedAuthentication=       PKCS11Provider=                    StreamLocalBindMask=
+ ...
+#+end_example
+
 * Implementation
 :PROPERTIES:
 :header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) ".elv")
@@ -86,17 +97,31 @@ The =-ssh-hosts= function extracts all hostnames from the files listed in =$conf
   }
 #+end_src
 
-We store the call to =-ssh-hosts= in =$completions=.
+The =-ssh-options= function lists all the possible configuration options, by parsing them from the =ssh_config= man page (if available).
 
 #+begin_src elvish
-  completions = [ { -ssh-hosts } ]
+  fn -ssh-options {
+    _ = ?(cat (man -w ssh_config 2>/dev/null)) | eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } }
+  }
+#+end_src
+
+We store the call to =-ssh-hosts= in =$completions=. We also complete =-o= to help with the configuration options.
+
+#+begin_src elvish
+  completions = [ { -ssh-hosts; put '-o' } ]
 #+end_src
 
 Finally, we define =ssh-completer= to simply call =comp:sequence= with out completion definition.
 
 #+begin_src elvish
   fn ssh-completer [@cmd]{
-    comp:sequence $completions $@cmd
+    if (eq $cmd[-2] "-o") {
+      -ssh-options | each [opt]{
+        edit:complex-candidate &code-suffix='=' &display-suffix='=' $opt
+      }
+    } else {
+      comp:sequence $completions $@cmd
+    }
   }
 #+end_src
 
