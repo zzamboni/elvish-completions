@@ -35,5 +35,6 @@ fn ssh-completer [def @cmd]{
   }
 }
 
-edit:completion:arg-completer[ssh] = [@cmd]{ ssh-completer $completions-ssh $@cmd }
-edit:completion:arg-completer[scp] = [@cmd]{ ssh-completer $completions-scp $@cmd }
+edit:completion:arg-completer[ssh]  = [@cmd]{ ssh-completer $completions-ssh $@cmd }
+edit:completion:arg-completer[sftp] = [@cmd]{ ssh-completer $completions-ssh $@cmd }
+edit:completion:arg-completer[scp]  = [@cmd]{ ssh-completer $completions-scp $@cmd }

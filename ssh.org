@@ -135,6 +135,7 @@ Finally, we define =ssh-completer= to complete with =-ssh-options= if the last a
 We initialize the completions by assigning the call to =ssh-completer= with the correct definition to the corresponding elements of =$edit:completion:arg-completer=.
 
 #+begin_src elvish
-  edit:completion:arg-completer[ssh] = [@cmd]{ ssh-completer $completions-ssh $@cmd }
-  edit:completion:arg-completer[scp] = [@cmd]{ ssh-completer $completions-scp $@cmd }
+  edit:completion:arg-completer[ssh]  = [@cmd]{ ssh-completer $completions-ssh $@cmd }
+  edit:completion:arg-completer[sftp] = [@cmd]{ ssh-completer $completions-ssh $@cmd }
+  edit:completion:arg-completer[scp]  = [@cmd]{ ssh-completer $completions-scp $@cmd }
 #+end_src
