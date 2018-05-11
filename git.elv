@@ -23,16 +23,16 @@ fn -run-git-cmd [gitcmd @rest]{
 
 fn -git-opts [@cmd]{
   opts = [(_ = ?(git $@cmd -h 2>&1) | each [l]{
-      re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
+      re:find '(--\w[\w-]*)' $l
   })[groups][1][text]]
   map = [&]
   each [k]{ map[$k] = $true } $opts
-  keys $map | each [k]{ edit:complex-candidate &style=$option-style $k }
+  keys $map | comp:decorate &style=$option-style
 }
 
 fn MODIFIED      { explode $status[local-modified] }
 fn UNTRACKED     { explode $status[untracked] }
-fn MOD-UNTRACKED { MODIFIED-FILES ; UNTRACKED-FILES }
+fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
 fn TRACKED       { _ = ?(git ls-files 2>/dev/null) }
 fn BRANCHES      { _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
 fn REMOTES       { _ = ?(git remote 2>/dev/null) }
@@ -54,7 +54,7 @@ completions[stage] =    add
 completions[checkout] = [ { -git-opts checkout ; MODIFIED; BRANCHES }              ]
 completions[mv] =       [ { -git-opts mv       ; TRACKED            }              ]
 completions[rm] =       [ { -git-opts rm       ; TRACKED            }              ]
-completions[diff] =     [ { -git-opts diff     ; TRACKED            }              ]
+completions[diff] =     [ { -git-opts diff     ; TRACKED; BRANCHES  }              ]
 completions[push] =     [ { -git-opts push     ; REMOTES            } { BRANCHES } ]
 completions[merge] =    [ { -git-opts merge    ; BRANCHES           }              ]
 
