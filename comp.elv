@@ -1,5 +1,18 @@
 use github.com/zzamboni/elvish-modules/util
 
+fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
+  if (eq (count $input) 0) {
+    input = [(all)]
+  }
+  if (not-eq $suffix '') {
+    display-suffix = $suffix
+    code-suffix = $suffix
+  }
+  each [k]{
+    edit:complex-candidate &code-suffix=$code-suffix &display-suffix=$display-suffix &style=$style $k
+  } $input
+}
+
 fn expand-completion-item [def item]{
   if (has-key $def $item) {
     what = (kind-of $def[$item])
