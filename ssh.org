@@ -114,7 +114,7 @@ We store the call to =-ssh-hosts= in =$ssh-completions=. We also complete =-o= t
 For =scp= we use the same call to =-ssh-hosts=, but we add a colon automatically to each one.
 
 #+begin_src elvish
-  completions-scp = [ { -ssh-hosts | each [h]{ put $h':' }; put '-o' } ]
+  completions-scp = [ { -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
 #+end_src
 
 
@@ -123,9 +123,7 @@ Finally, we define =ssh-completer= to complete with =-ssh-options= if the last a
 #+begin_src elvish
   fn ssh-completer [def @cmd]{
     if (eq $cmd[-2] "-o") {
-      -ssh-options | each [opt]{
-        edit:complex-candidate &code-suffix='=' &display-suffix='=' $opt
-      }
+      -ssh-options | comp:decorate &suffix='='
     } else {
       comp:sequence $def $@cmd
     }

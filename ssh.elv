@@ -23,13 +23,11 @@ fn -ssh-options {
 
 completions-ssh = [ { -ssh-hosts; put '-o' } ]
 
-completions-scp = [ { -ssh-hosts | each [h]{ put $h':' }; put '-o' } ]
+completions-scp = [ { -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
 
 fn ssh-completer [def @cmd]{
   if (eq $cmd[-2] "-o") {
-    -ssh-options | each [opt]{
-      edit:complex-candidate &code-suffix='=' &display-suffix='=' $opt
-    }
+    -ssh-options | comp:decorate &suffix='='
   } else {
     comp:sequence $def $@cmd
   }
