@@ -21,16 +21,19 @@ fn -ssh-options {
   _ = ?(cat (man -w ssh_config 2>/dev/null)) | eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } }
 }
 
-completions = [ { -ssh-hosts; put '-o' } ]
+completions-ssh = [ { -ssh-hosts; put '-o' } ]
 
-fn ssh-completer [@cmd]{
+completions-scp = [ { -ssh-hosts | each [h]{ put $h':' }; put '-o' } ]
+
+fn ssh-completer [def @cmd]{
   if (eq $cmd[-2] "-o") {
     -ssh-options | each [opt]{
       edit:complex-candidate &code-suffix='=' &display-suffix='=' $opt
     }
   } else {
-    comp:sequence $completions $@cmd
+    comp:sequence $def $@cmd
   }
 }
 
-edit:completion:arg-completer[ssh] = $ssh-completer~
+edit:completion:arg-completer[ssh] = [@cmd]{ ssh-completer $completions-ssh $@cmd }
+edit:completion:arg-completer[scp] = [@cmd]{ ssh-completer $completions-scp $@cmd }
