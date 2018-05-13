@@ -21,9 +21,9 @@ fn -ssh-options {
   _ = ?(cat (man -w ssh_config 2>/dev/null)) | eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } }
 }
 
-completions-ssh = [ { -ssh-hosts; put '-o' } ]
+completions-ssh = [ [_]{ -ssh-hosts; put '-o' } ]
 
-completions-scp = [ { -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
+completions-scp = [ [_]{ -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
 
 fn ssh-completer [def @cmd]{
   if (eq $cmd[-2] "-o") {

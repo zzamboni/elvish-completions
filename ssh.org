@@ -108,13 +108,13 @@ The =-ssh-options= function lists all the possible configuration options, by par
 We store the call to =-ssh-hosts= in =$ssh-completions=. We also complete =-o= to help with the configuration options.
 
 #+begin_src elvish
-  completions-ssh = [ { -ssh-hosts; put '-o' } ]
+  completions-ssh = [ [_]{ -ssh-hosts; put '-o' } ]
 #+end_src
 
 For =scp= we use the same call to =-ssh-hosts=, but we add a colon automatically to each one.
 
 #+begin_src elvish
-  completions-scp = [ { -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
+  completions-scp = [ [_]{ -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
 #+end_src
 
 
