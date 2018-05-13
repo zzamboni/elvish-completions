@@ -13,11 +13,13 @@ fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
   } $input
 }
 
-fn expand-completion-item [def item]{
+fn empty { nop }
+
+fn expand-completion-item [def item arg]{
   if (has-key $def $item) {
     what = (kind-of $def[$item])
     if (eq $what 'fn') {
-      $def[$item]
+      $def[$item] $arg
     } elif (eq $what 'list') {
       explode $def[$item]
     }
@@ -26,16 +28,18 @@ fn expand-completion-item [def item]{
 
 fn sequence [def @cmd]{
   n = (count $cmd)
-  expand-completion-item $def (util:min (- $n 2) (- (count $def) 1))
+  narg = $cmd[-1]
+  expand-completion-item $def (util:min (- $n 2) (- (count $def) 1)) $narg
 }
 
 fn subcommands [def @cmd]{
   n = (count $cmd)
+  narg = $cmd[-1]
 
 if (eq $n 2) {
   keys (dissoc $def -opts)
   if (has-key $def -opts) {
-    expand-completion-item $def -opts
+    expand-completion-item $def -opts $narg
   }
 
 } else {

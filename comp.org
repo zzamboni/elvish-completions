@@ -90,17 +90,22 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
   }
 #+end_src
 
-
 ** Completion functions
+
+=empty= produces no completions. It can be used to signal the end of a completion definition sequence when we don't want to repeat the last item.
+
+#+begin_src elvish
+  fn empty { nop }
+#+end_src
 
 =expand-completion-item= expands a single element into its completion values. If it's a function, it gets executed. If it's a list, it's exploded.
 
 #+begin_src elvish
-  fn expand-completion-item [def item]{
+  fn expand-completion-item [def item arg]{
     if (has-key $def $item) {
       what = (kind-of $def[$item])
       if (eq $what 'fn') {
-        $def[$item]
+        $def[$item] $arg
       } elif (eq $what 'list') {
         explode $def[$item]
       }
@@ -113,7 +118,8 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
 #+begin_src elvish
   fn sequence [def @cmd]{
     n = (count $cmd)
-    expand-completion-item $def (util:min (- $n 2) (- (count $def) 1))
+    narg = $cmd[-1]
+    expand-completion-item $def (util:min (- $n 2) (- (count $def) 1)) $narg
   }
 #+end_src
 
@@ -122,6 +128,7 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
 #+begin_src elvish
   fn subcommands [def @cmd]{
     n = (count $cmd)
+    narg = $cmd[-1]
 #+end_src
 
 If completion for the top-level subcommand is expected (=eq $n 2=), the top-level indices plus the global options (if provided in the =-opts= element).
@@ -130,7 +137,7 @@ If completion for the top-level subcommand is expected (=eq $n 2=), the top-leve
     if (eq $n 2) {
       keys (dissoc $def -opts)
       if (has-key $def -opts) {
-        expand-completion-item $def -opts
+        expand-completion-item $def -opts $narg
       }
 #+end_src
 
