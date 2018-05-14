@@ -1,8 +1,6 @@
 use ./comp
 use re
 
-completions = []
-
 config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
 
 fn -ssh-hosts {
@@ -17,22 +15,28 @@ fn -ssh-hosts {
   keys $hosts
 }
 
-fn -ssh-options {
-  _ = ?(cat (man -w ssh_config 2>/dev/null)) | eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } }
+-ssh-options = [(
+    _ = ?(cat (man -w ssh_config 2>/dev/null)) |
+    eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } } |
+    comp:decorate &suffix='='
+)]
+
+fn -gen-completions [&suffix='']{
+  put [ &-seq= [ [@cmd]{
+        if (eq $cmd[-2] "-o") {
+          explode $-ssh-options
+        } else {
+          -ssh-hosts | comp:decorate &suffix=$suffix
+          put '-o'
+        }
+      }
+    ]
+  ]
 }
 
-completions-ssh = [ [_]{ -ssh-hosts; put '-o' } ]
+completions-ssh = (-gen-completions)
+completions-scp = (-gen-completions &suffix=":")
 
-completions-scp = [ [_]{ -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
-
-fn ssh-completer [def @cmd]{
-  if (eq $cmd[-2] "-o") {
-    -ssh-options | comp:decorate &suffix='='
-  } else {
-    comp:sequence $def $@cmd
-  }
-}
-
-edit:completion:arg-completer[ssh]  = [@cmd]{ ssh-completer $completions-ssh $@cmd }
-edit:completion:arg-completer[sftp] = [@cmd]{ ssh-completer $completions-ssh $@cmd }
-edit:completion:arg-completer[scp]  = [@cmd]{ ssh-completer $completions-scp $@cmd }
+edit:completion:arg-completer[ssh]  = (comp:sequence-wrapper $completions-ssh)
+edit:completion:arg-completer[sftp] = (comp:sequence-wrapper $completions-ssh)
+edit:completion:arg-completer[scp]  = (comp:sequence-wrapper $completions-scp)

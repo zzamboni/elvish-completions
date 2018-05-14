@@ -1,12 +1,14 @@
 use ./comp
 completions = [
-  [arg]{ put {$arg}*[match-hidden][nomatch-ok] | each [x]{
-      if (-is-dir $x) {
-        edit:complex-candidate &code-suffix=/ &style='blue;bold' $x
+  &-seq= [
+    [arg]{ put {$arg}*[match-hidden][nomatch-ok] | each [x]{
+        if (-is-dir $x) {
+          edit:complex-candidate &code-suffix=/ &style='blue;bold' $x
+        }
       }
     }
-  }
-  { comp:empty }
+    $nop~
+  ]
 ]
 
 edit:completion:arg-completer[cd] = [@cmd]{

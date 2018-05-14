@@ -1,3 +1,4 @@
+use re
 use github.com/zzamboni/elvish-modules/util
 
 fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
@@ -13,33 +14,40 @@ fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
   } $input
 }
 
-fn empty { nop }
-
-fn expand-completion-item [def item arg]{
-  if (has-key $def $item) {
-    what = (kind-of $def[$item])
-    if (eq $what 'fn') {
-      $def[$item] $arg
-    } elif (eq $what 'list') {
-      explode $def[$item]
+fn item [def @cmd]{
+  arg = $cmd[-1]
+  what = (kind-of $def)
+  if (eq $what 'fn') {
+    fnargs = [ (count $def[arg-names]) (not-eq $def[rest-arg] '') ]
+    if (eq $fnargs [ 0 $false ]) {
+      $def
+    } elif (eq $fnargs [ 1 $false ]) {
+      $def $arg
+    } elif (eq $fnargs [ 0 $true ]) {
+      $def $@cmd
     }
+  } elif (eq $what 'list') {
+    explode $def
   }
 }
 
 fn sequence [def @cmd]{
   n = (count $cmd)
-  narg = $cmd[-1]
-  expand-completion-item $def (util:min (- $n 2) (- (count $def) 1)) $narg
+  cmd-wo = [(each [p]{ if (not (re:match "^-" $p)) { put $p } } $cmd)]
+  n-wo = (count $cmd-wo)
+  if (and (eq $n-wo 2) (has-key $def -opts)) {
+    item $def[-opts] $@cmd
+  }
+  item $def[-seq][(util:min (- $n-wo 2) (- (count $def[-seq]) 1))] $@cmd
 }
 
 fn subcommands [def @cmd]{
   n = (count $cmd)
-  narg = $cmd[-1]
 
 if (eq $n 2) {
   keys (dissoc $def -opts)
   if (has-key $def -opts) {
-    expand-completion-item $def -opts $narg
+    item $def[-opts] $@cmd
   }
 
 } else {
@@ -53,3 +61,11 @@ if (eq $n 2) {
     }
   }
 }
+
+fn -wrapper-gen [func]{
+  put [def]{ put [@cmd]{ $func $def $@cmd } }
+}
+
+item-wrapper~ = (-wrapper-gen $item~)
+sequence-wrapper~ = (-wrapper-gen $sequence~)
+subcommands-wrapper~ = (-wrapper-gen $subcommands~)

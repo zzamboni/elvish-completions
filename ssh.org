@@ -67,12 +67,6 @@ We first load a number of libraries, including =comp=, the Elvish completion fra
   use re
 #+end_src
 
-This is where the big completion-definition map will get build up progressively below.
-
-#+begin_src elvish
-  completions = []
-#+end_src
-
 List of config files from which to extract hostnames.
 
 #+begin_src elvish :noweb yes
@@ -97,43 +91,44 @@ The =-ssh-hosts= function extracts all hostnames from the files listed in =$conf
   }
 #+end_src
 
-The =-ssh-options= function lists all the possible configuration options, by parsing them from the =ssh_config= man page (if available).
+We store in =-ssh-options= all the possible configuration options, by parsing them directly from the =ssh_config= man page (if available). These are initialized at module load time since they are not likely to change frequently.
 
 #+begin_src elvish
-  fn -ssh-options {
-    _ = ?(cat (man -w ssh_config 2>/dev/null)) | eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } }
+  -ssh-options = [(
+      _ = ?(cat (man -w ssh_config 2>/dev/null)) |
+      eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } } |
+      comp:decorate &suffix='='
+  )]
+#+end_src
+
+=-gen-completions= dynamically generates the completion definition for ssh-related commands. We use this because the completions for =ssh= and =scp=, for example, are the same except for the suffix that needs to be added to the hostnames in the completion. The completion definition in all cases provides either the list of valid options (if the previous argument is =-o=, or otherwise =-o= plus the list of hosts (with the appropriate suffix).
+
+#+begin_src elvish
+  fn -gen-completions [&suffix='']{
+    put [ &-seq= [ [@cmd]{
+          if (eq $cmd[-2] "-o") {
+            explode $-ssh-options
+          } else {
+            -ssh-hosts | comp:decorate &suffix=$suffix
+            put '-o'
+          }
+        }
+      ]
+    ]
   }
 #+end_src
 
-We store the call to =-ssh-hosts= in =$ssh-completions=. We also complete =-o= to help with the configuration options.
+We use =-gen-completions= to produce the actual completion definitions for =ssh= and =scp=.
 
 #+begin_src elvish
-  completions-ssh = [ [_]{ -ssh-hosts; put '-o' } ]
+  completions-ssh = (-gen-completions)
+  completions-scp = (-gen-completions &suffix=":")
 #+end_src
 
-For =scp= we use the same call to =-ssh-hosts=, but we add a colon automatically to each one.
+We initialize the completions by using =comp:sequence-wrapper= to produce the functions with the corresponding definition and assign them to the corresponding elements of =$edit:completion:arg-completer=.
 
 #+begin_src elvish
-  completions-scp = [ [_]{ -ssh-hosts | comp:decorate &suffix=':'; put '-o' } ]
-#+end_src
-
-
-Finally, we define =ssh-completer= to complete with =-ssh-options= if the last argument is =-o=, or with the defined completions array using =comp:sequence= otherwise. It receives as argument the definition to use, so that we can pass it =$completions-ssh= or =$completions-scp=.
-
-#+begin_src elvish
-  fn ssh-completer [def @cmd]{
-    if (eq $cmd[-2] "-o") {
-      -ssh-options | comp:decorate &suffix='='
-    } else {
-      comp:sequence $def $@cmd
-    }
-  }
-#+end_src
-
-We initialize the completions by assigning the call to =ssh-completer= with the correct definition to the corresponding elements of =$edit:completion:arg-completer=.
-
-#+begin_src elvish
-  edit:completion:arg-completer[ssh]  = [@cmd]{ ssh-completer $completions-ssh $@cmd }
-  edit:completion:arg-completer[sftp] = [@cmd]{ ssh-completer $completions-ssh $@cmd }
-  edit:completion:arg-completer[scp]  = [@cmd]{ ssh-completer $completions-scp $@cmd }
+  edit:completion:arg-completer[ssh]  = (comp:sequence-wrapper $completions-ssh)
+  edit:completion:arg-completer[sftp] = (comp:sequence-wrapper $completions-ssh)
+  edit:completion:arg-completer[scp]  = (comp:sequence-wrapper $completions-scp)
 #+end_src

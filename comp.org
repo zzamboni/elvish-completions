@@ -8,9 +8,14 @@ This file is written in [[http://www.howardism.org/Technical/Emacs/literate-prog
 
 * Table of Contents                                            :TOC:noexport:
 - [[#usage][Usage]]
-- [[#implementation][Implementation]]
+  - [[#compitem-def-cmd][comp:item $def @cmd]]
+  - [[#compsequence-def-cmd][comp:sequence $def @cmd]]
+  - [[#compsubcommands-def-cmd][comp:subcommands $def @cmd]]
   - [[#utility-functions][Utility functions]]
+- [[#implementation][Implementation]]
+  - [[#utility-functions-1][Utility functions]]
   - [[#completion-functions][Completion functions]]
+  - [[#completion-wrapper-functions][Completion wrapper functions]]
 
 * Usage
 
@@ -27,38 +32,117 @@ In your =rc.elv=, load this module:
   use github.com/zzamboni/elvish-completions/comp
 #+end_src
 
-The =comp:subcommands= function does simple subcomand-completion for commands such as =git=. It receives the following arguments:
+The following functions are available for you to provide completions. All of them receive two arguments:
 
-- =$def= is a map containing the completion definitions. Each index is a subcommand, and its value is an array in which each element can be either a function that returns the possible completions at that point, an array containing textual possible completions at that point, or a string which refers to another subcommand which defines the completions to use (think of command aliases in =git=). The map may contain an entry with the index =-opts=. If present, it should be an array or a function containing possible options at the top level (to appear before a subcommand). Here is a simplified example from the [[https://github.com/zzamboni/elvish-completions/blob/master/git.org][git completions]] (see that file for the full code, including the definition of the functions that get called):
-  #+begin_src elvish
-    git-completions = [
-      &-opts= [
-        (git --help | each [l]{
-            re:find '(--\w[\w-]*)' $l; re:find '[^-](-\w)\W' $l
-        })[groups][1][text]
-      ]
-      &add=      [ { MODIFIED-FILES; UNTRACKED-FILES } ]
-      &stage=    add
-      &checkout= [ { MODIFIED-FILES; BRANCHES }        ]
-      &mv=       [ $TRACKED-FILES~                     ]
-      &rm=       mv
-      &diff=     mv
-      &push=     [ $REMOTES~ $BRANCHES~                ]
-      &merge=    [ $BRANCHES~                          ]
-    ]
-  #+end_src
+- A "completion definition", which in general, indicates how the completions will be produced. The structure of this definition depends on the function, and they are documented below.
+- The contents of the command line so far, as passed to the [[https://elvish.io/ref/edit.html#argument-completer][argument completer functions]].
 
-- =@cmd= is the current command line, as passed to regular [[https://elvish.io/ref/edit.html#completion-api][completion functions]].
+Each function returns any available completions according to its definitions, which will then be offered by Elvish to the user.
 
-For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elvish-completions/blob/master/git.org][git completer]] as follows:
+#+begin_note
+*Note:* all functions have an equivalent with the name ending in =-wrapper=, which receives only the definition argument and which return a /function/ which can be assigned directly to the corresponding elements of =$edit:completion:arg-completer=. See below for examples.
+#+end_note
+
+** comp:item $def @cmd
+
+This is the basic building block of the framework. It receives a single completion definition item, which can be one of the following:
+
+- An array containing all the potential completions (the array can be empty, in which case no completions are provided).
+- A function which returns the potential completions (it can return nothing, in which case no completions are provided). The function should have one of the following arities, which affect which arguments will be passed to it:
+  - If it takes no arguments, no arguments are passed to it
+  - If it takes only a single argument, it gets the current (last) component of the command line =@cmd=
+  - If it takes only a rest argument, it gets the full current command line (the contents of =@cmd=)
+
+Example: you can build a simple completer for =cd= like this:
 
 #+begin_src elvish
-  fn git-completer [gitcmd @rest]{
-    status = (git:status)
-    comp:subcommands $git-completions $gitcmd $@rest
-  }
+use github.com/zzamboni/elvish-completions/comp
+fn complete-dirs [arg]{ put $arg* | each [x]{ if (-is-dir $x) { put $x } } }
+edit:completion:arg-completer[cd] = [@cmd]{ comp:item $complete-dirs~ $@cmd }
+#+end_src
 
-  edit:completion:arg-completer[git] = $git-completer~
+(I defined the =complete-dirs= function separately only for clarity - you can also embed the lambda directly as an argument to =comp:item=)
+
+In simple cases like the above, you can use the =comp:item-wrapper= function to avoid defining the wrapper function by hand:
+
+#+begin_src elvish
+edit:completion:arg-completer[cd] = (comp:item-wrapper $complete-dirs~)
+#+end_src
+
+** comp:sequence $def @cmd
+
+=comp:sequence= builds upon =comp:item= to allow specifying a /sequence of items/ as the completion definition, including support for command-line options at the beginning of the command. The definition in this case has to be a map with two indices:
+
+- =-seq= (mandatory) containing an array of definition items, which will be applied depending on their position within the command parameter sequence. The last element of the list is repeated for all later arguments. If no completions should be provided past the last argument, you can use =$nop~= as the last element of the definition list.
+- =-opts= (optional) may contain a single definition item which produces a list of command-line options that are allowed at the beginning of the command, when no other arguments have been provided.
+
+#+begin_note
+*Note:* the algorithm used at the moment for identifying command-line options does not work correctly with options which start with a dash (=-=) and which do not have space-separated values. This will be fixed in an upcoming version.
+#+end_note
+
+*Example #1:* you can improve on the previous completer for =cd= by preventing more than one argument from being completed (only the first argument will be completed using =complete-dirs=, all others will be completed using =nop=, which provides no completions):
+
+#+begin_src elvish
+  edit:completion:arg-completer[cd] = [@cmd]{ comp:sequence [
+      &-seq= [ $complete-dirs~ $nop~ ]
+  ] $@cmd }
+#+end_src
+
+*Example #2:* a simple completer for =ls= with a subset of its options, and using =comp:sequence-wrapper= (note that =-l= and =-R= are only provided as completions when you have not typed any filenames yet):
+
+#+begin_src elvish
+  edit:completion:arg-completer[ls] = (comp:sequence-wrapper [
+      &-opts= [ -l -R ]
+      &-seq= [ [arg]{ put $arg* } ]
+  ])
+#+end_src
+
+*Example #3:* See the [[https://github.com/zzamboni/elvish-completions/blob/master/ssh.org][ssh completer]].
+
+** comp:subcommands $def @cmd
+
+The =comp:subcommands= function builds upon =comp:sequence= to provide subcomand-completion for commands such as =git=.  In this case, the definition is a map containing the subcommand completion definitions. Each index is a subcommand, and its value is a completion sequence as accepted by =comp:sequence= (each sequence must only correspond to the arguments of its corresponding subcommand). The map may also contain an entry with the index =-opts= containing a single item definition to generate any available top-level options (to appear before a subcommand).
+
+*Example #1:* a simple completer for the =brew= package manager, with support for installing and uninstalling packages. =install= gets as completions all available packages, while =uninstall= only completes installed packages. Note that for both subcommands we automatically extract command-line options . Also note that all =-opts= elements get initialized at definition time (they are arrays), whereas the =-seq= completions get evaluated at runtime (they are lambdas), to automatically update according to the current packages.
+
+#+begin_src elvish
+  brew-completions = [
+    &-opts= [ --version ]
+    &install= [
+      &-opts= [ (re:find '(--\w[\w-]*)' (brew install -h | head -1))[groups][1][text] ]
+      &-seq= [ { brew search } ]
+    ]
+    &uninstall= [
+      &-opts= [ (re:find '(--\w[\w-]*)' (brew uninstall -h | head -1))[groups][1][text] ]
+      &-seq= [ { brew list } ]
+    ]
+  ]
+
+  edit:completion:arg-completer[brew] = (comp:subcommands-wrapper $brew-completions)
+#+end_src
+
+*Example #2:* See the [[https://github.com/zzamboni/elvish-completions/blob/master/git.org][git completer]].
+
+** Utility functions
+
+=comp:decorate= maps its input through =edit:complex-candidate= with the given options. Can be passed the same options as [[https://elvish.io/ref/edit.html#argument-completer][edit:complex-candidate]]. In addition, if =&suffix= is specified, it is used to set both =&display-suffix= and =&code-suffix=.
+
+*Example:* the =brew= completer shown before can be made to show package names and command-line options in different styles. Note how =comp:decorate= can get its arguments both as arguments (in the =-opts= assignments) and as pipeline input (in =-seq=).
+
+#+begin_src elvish
+  brew-completions = [
+    &-opts= [ --version ]
+    &install= [
+      &-opts= [ (comp:decorate &style=blue (re:find '(--\w[\w-]*)' (brew install -h | head -1))[groups][1][text]) ]
+      &-seq= [ { brew search | comp:decorate &style=green } ]
+    ]
+    &uninstall= [
+      &-opts= [ (comp:decorate &style=blue (re:find '(--\w[\w-]*)' (brew uninstall -h | head -1))[groups][1][text]) ]
+      &-seq= [ { brew list | comp:decorate &style=red } ]
+    ]
+  ]
+
+  edit:completion:arg-completer[brew] = (comp:subcommands-wrapper $brew-completions)
 #+end_src
 
 * Implementation
@@ -68,6 +152,7 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
 :END:
 
 #+begin_src elvish
+  use re
   use github.com/zzamboni/elvish-modules/util
 #+end_src
 
@@ -92,23 +177,29 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
 
 ** Completion functions
 
-=empty= produces no completions. It can be used to signal the end of a completion definition sequence when we don't want to repeat the last item.
+=comp:item= expands a single element into its completion values. If it's a function, it gets executed. If it's a list, it's exploded.
+
+If the completion item is a function, the arguments that get passed to it depend on its signature:
+
+- If it receives no arguments, no arguments are passed
+- If it receives a single argument, it gets the current component of the command line
+- If it receives a rest argument, it receives the full current command line
 
 #+begin_src elvish
-  fn empty { nop }
-#+end_src
-
-=expand-completion-item= expands a single element into its completion values. If it's a function, it gets executed. If it's a list, it's exploded.
-
-#+begin_src elvish
-  fn expand-completion-item [def item arg]{
-    if (has-key $def $item) {
-      what = (kind-of $def[$item])
-      if (eq $what 'fn') {
-        $def[$item] $arg
-      } elif (eq $what 'list') {
-        explode $def[$item]
+  fn item [def @cmd]{
+    arg = $cmd[-1]
+    what = (kind-of $def)
+    if (eq $what 'fn') {
+      fnargs = [ (count $def[arg-names]) (not-eq $def[rest-arg] '') ]
+      if (eq $fnargs [ 0 $false ]) {
+        $def
+      } elif (eq $fnargs [ 1 $false ]) {
+        $def $arg
+      } elif (eq $fnargs [ 0 $true ]) {
+        $def $@cmd
       }
+    } elif (eq $what 'list') {
+      explode $def
     }
   }
 #+end_src
@@ -118,8 +209,12 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
 #+begin_src elvish
   fn sequence [def @cmd]{
     n = (count $cmd)
-    narg = $cmd[-1]
-    expand-completion-item $def (util:min (- $n 2) (- (count $def) 1)) $narg
+    cmd-wo = [(each [p]{ if (not (re:match "^-" $p)) { put $p } } $cmd)]
+    n-wo = (count $cmd-wo)
+    if (and (eq $n-wo 2) (has-key $def -opts)) {
+      item $def[-opts] $@cmd
+    }
+    item $def[-seq][(util:min (- $n-wo 2) (- (count $def[-seq]) 1))] $@cmd
   }
 #+end_src
 
@@ -128,7 +223,6 @@ For example, =comp:subcommands= is used by the [[https://github.com/zzamboni/elv
 #+begin_src elvish
   fn subcommands [def @cmd]{
     n = (count $cmd)
-    narg = $cmd[-1]
 #+end_src
 
 If completion for the top-level subcommand is expected (=eq $n 2=), the top-level indices plus the global options (if provided in the =-opts= element).
@@ -137,7 +231,7 @@ If completion for the top-level subcommand is expected (=eq $n 2=), the top-leve
     if (eq $n 2) {
       keys (dissoc $def -opts)
       if (has-key $def -opts) {
-        expand-completion-item $def -opts $narg
+        item $def[-opts] $@cmd
       }
 #+end_src
 
@@ -155,4 +249,20 @@ Otherwise, depending on the subcommand already provided, the corresponding eleme
       }
     }
   }
+#+end_src
+
+** Completion wrapper functions
+
+The wrapper functions receive only the =$def= argument, and return a /function/ which takes the current command and call the corresponding completion function with the correct arguments. We have a wrapper-generator function which takes the function to call and returns the appropriate wrapper function. Very meta.
+
+#+begin_src elvish
+  fn -wrapper-gen [func]{
+    put [def]{ put [@cmd]{ $func $def $@cmd } }
+  }
+#+end_src
+
+#+begin_src elvish
+item-wrapper~ = (-wrapper-gen $item~)
+sequence-wrapper~ = (-wrapper-gen $sequence~)
+subcommands-wrapper~ = (-wrapper-gen $subcommands~)
 #+end_src
