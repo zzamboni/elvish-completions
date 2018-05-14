@@ -39,9 +39,7 @@ The following functions are available for you to provide completions. All of the
 
 Each function returns any available completions according to its definitions, which will then be offered by Elvish to the user.
 
-#+begin_note
 *Note:* all functions have an equivalent with the name ending in =-wrapper=, which receives only the definition argument and which return a /function/ which can be assigned directly to the corresponding elements of =$edit:completion:arg-completer=. See below for examples.
-#+end_note
 
 ** comp:item $def @cmd
 
@@ -76,9 +74,7 @@ edit:completion:arg-completer[cd] = (comp:item-wrapper $complete-dirs~)
 - =-seq= (mandatory) containing an array of definition items, which will be applied depending on their position within the command parameter sequence. The last element of the list is repeated for all later arguments. If no completions should be provided past the last argument, you can use =$nop~= as the last element of the definition list.
 - =-opts= (optional) may contain a single definition item which produces a list of command-line options that are allowed at the beginning of the command, when no other arguments have been provided.
 
-#+begin_note
 *Note:* the algorithm used at the moment for identifying command-line options does not work correctly with options which start with a dash (=-=) and which do not have space-separated values. This will be fixed in an upcoming version.
-#+end_note
 
 *Example #1:* you can improve on the previous completer for =cd= by preventing more than one argument from being completed (only the first argument will be completed using =complete-dirs=, all others will be completed using =nop=, which provides no completions):
 
