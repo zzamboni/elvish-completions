@@ -12,5 +12,5 @@ completions = [
 ]
 
 edit:completion:arg-completer[cd] = [@cmd]{
-  comp:sequence $completions $@cmd
+  comp:expand $completions $@cmd
 }

@@ -110,7 +110,7 @@ We define the functions that return different possible values for completions. T
 
 ** Initialization of completion definitions
 
-In this section we initialize the =$completions= map with the necessary data structure for =comp:subcommands= to provide the completions. We extract as much information as possible automatically from =git= itself.
+In this section we initialize the =$completions= map with the necessary data structure for =comp:expand= to provide the completions. We extract as much information as possible automatically from =git= itself.
 
 First , we fetch the list of valid git commands =git help -a=. Initially all of them are stored in the =completions= array with a function that produces  completions for their options, as extracted by the =-git-opts= function. Some of them get assigned more specific completions below.
 
@@ -119,7 +119,7 @@ First , we fetch the list of valid git commands =git help -a=. Initially all of 
   each [c]{ completions[$c] = [ { -git-opts $c } ] } $-cmds
 #+end_src
 
-Next, we parse the defined aliases from the output of =git config --list=. We store the aliases in =completions= as well, but we check if an alias points to another valid command. In this case, we store the name of the target command as its value, which =comp:subcommands= interprets as "use the completions from the target command".
+Next, we parse the defined aliases from the output of =git config --list=. We store the aliases in =completions= as well, but we check if an alias points to another valid command. In this case, we store the name of the target command as its value, which =comp:expand= interprets as "use the completions from the target command".
 
 #+begin_src elvish
   -aliases = [(git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l })[groups][1 2][text]]
@@ -172,12 +172,12 @@ We also store in =$completions= the list of global git options, extracted from t
   completions[-opts] = { -git-opts }
 #+end_src
 
-Finally, we define =git-completer= to simply fetch the current git status information, and call =comp:subcommands= with out completion definitions.
+Finally, we define =git-completer= to simply fetch the current git status information, and call =comp:expand= with out completion definitions.
 
 #+begin_src elvish
   fn git-completer [gitcmd @rest]{
     status = (git:status)
-    comp:subcommands $completions $gitcmd $@rest
+    comp:expand $completions $gitcmd $@rest
   }
 #+end_src
 

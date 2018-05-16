@@ -14,7 +14,13 @@ fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
   } $input
 }
 
-fn item [def @cmd]{
+fn empty { nop }
+
+# Forward declarations to be overriden later
+fn sequence { }
+fn subcommands { }
+
+fn expand [def @cmd]{
   arg = $cmd[-1]
   what = (kind-of $def)
   if (eq $what 'fn') {
@@ -28,26 +34,32 @@ fn item [def @cmd]{
     }
   } elif (eq $what 'list') {
     explode $def
+  } elif (eq $what 'map') {
+    if (has-key $def '-seq') {
+      sequence $def $@cmd
+    } else {
+      subcommands $def $@cmd
+    }
   }
 }
 
-fn sequence [def @cmd]{
+sequence~ = [def @cmd]{
   n = (count $cmd)
   cmd-wo = [(each [p]{ if (not (re:match "^-" $p)) { put $p } } $cmd)]
   n-wo = (count $cmd-wo)
   if (and (eq $n-wo 2) (has-key $def -opts)) {
-    item $def[-opts] $@cmd
+    expand $def[-opts] $@cmd
   }
-  item $def[-seq][(util:min (- $n-wo 2) (- (count $def[-seq]) 1))] $@cmd
+  expand $def[-seq][(util:min (- $n-wo 2) (- (count $def[-seq]) 1))] $@cmd
 }
 
-fn subcommands [def @cmd]{
+subcommands~ = [def @cmd]{
   n = (count $cmd)
 
 if (eq $n 2) {
   keys (dissoc $def -opts)
   if (has-key $def -opts) {
-    item $def[-opts] $@cmd
+    expand $def[-opts] $@cmd
   }
 
 } else {
@@ -56,7 +68,7 @@ if (eq $n 2) {
       if (eq (kind-of $def[$subcommand]) 'string') {
         subcommands $def $cmd[0] $def[$subcommand] (explode $cmd[2:])
       } else {
-        sequence $def[$subcommand] (explode $cmd[1:])
+        expand $def[$subcommand] (explode $cmd[1:])
       }
     }
   }
@@ -66,6 +78,6 @@ fn -wrapper-gen [func]{
   put [def]{ put [@cmd]{ $func $def $@cmd } }
 }
 
-item-wrapper~ = (-wrapper-gen $item~)
+expand-wrapper~ = (-wrapper-gen $expand~)
 sequence-wrapper~ = (-wrapper-gen $sequence~)
 subcommands-wrapper~ = (-wrapper-gen $subcommands~)

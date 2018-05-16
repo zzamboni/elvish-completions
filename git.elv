@@ -83,7 +83,7 @@ completions[-opts] = { -git-opts }
 
 fn git-completer [gitcmd @rest]{
   status = (git:status)
-  comp:subcommands $completions $gitcmd $@rest
+  comp:expand $completions $gitcmd $@rest
 }
 
 edit:completion:arg-completer[git] = $git-completer~

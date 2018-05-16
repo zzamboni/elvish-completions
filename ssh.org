@@ -125,10 +125,10 @@ We use =-gen-completions= to produce the actual completion definitions for =ssh=
   completions-scp = (-gen-completions &suffix=":")
 #+end_src
 
-We initialize the completions by using =comp:sequence-wrapper= to produce the functions with the corresponding definition and assign them to the corresponding elements of =$edit:completion:arg-completer=.
+We initialize the completions by using =comp:expand-wrapper= to produce the functions with the corresponding definition and assign them to the corresponding elements of =$edit:completion:arg-completer=.
 
 #+begin_src elvish
-  edit:completion:arg-completer[ssh]  = (comp:sequence-wrapper $completions-ssh)
-  edit:completion:arg-completer[sftp] = (comp:sequence-wrapper $completions-ssh)
-  edit:completion:arg-completer[scp]  = (comp:sequence-wrapper $completions-scp)
+  edit:completion:arg-completer[ssh]  = (comp:expand-wrapper $completions-ssh)
+  edit:completion:arg-completer[sftp] = (comp:expand-wrapper $completions-ssh)
+  edit:completion:arg-completer[scp]  = (comp:expand-wrapper $completions-scp)
 #+end_src

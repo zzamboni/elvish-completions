@@ -37,6 +37,6 @@ fn -gen-completions [&suffix='']{
 completions-ssh = (-gen-completions)
 completions-scp = (-gen-completions &suffix=":")
 
-edit:completion:arg-completer[ssh]  = (comp:sequence-wrapper $completions-ssh)
-edit:completion:arg-completer[sftp] = (comp:sequence-wrapper $completions-ssh)
-edit:completion:arg-completer[scp]  = (comp:sequence-wrapper $completions-scp)
+edit:completion:arg-completer[ssh]  = (comp:expand-wrapper $completions-ssh)
+edit:completion:arg-completer[sftp] = (comp:expand-wrapper $completions-ssh)
+edit:completion:arg-completer[scp]  = (comp:expand-wrapper $completions-scp)
