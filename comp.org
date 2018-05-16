@@ -20,7 +20,7 @@ This file is written in [[http://www.howardism.org/Technical/Emacs/literate-prog
 
 * Usage
 
-The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use by end-users, but rather by Elvish developers who are writing [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
+The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use in an Elvish session, but to write your own [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
 
 As a first step, install the =elvish-completions= package using [[https://elvish.io/ref/epm.html][epm]]:
 
