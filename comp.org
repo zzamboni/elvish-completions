@@ -6,9 +6,12 @@ This module provides a few functions that make it easier to define completions i
 
 This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:comp.elv][comp.elv]] for the generated file.
 
-* Table of Contents                                            :TOC:noexport:
+* Table of Contents                                          :TOC_3:noexport:
 - [[#usage][Usage]]
   - [[#completion-definitions][Completion definitions]]
+    - [[#base-completion-items][Base completion items]]
+    - [[#completion-sequences][Completion sequences]]
+    - [[#subcommand-completion][Subcommand completion]]
   - [[#utility-functions][Utility functions]]
 - [[#implementation][Implementation]]
   - [[#utility-functions-1][Utility functions]]
