@@ -29,6 +29,8 @@ In your =rc.elv=, load this module:
   use github.com/zzamboni/elvish-completions/git
 #+end_src
 
+Now you can type =git<space>=, press ~Tab~ and see the corresponding completions. All =git= commands are automatically completed with their options (automatically extracted from their help messages). Some commands get more specific completions, including =add=, =push=, =checkout=, =diff= and a few others. Git aliases are automatically detected as well. Aliases which point to a single =git= command are automatically completed like the original command.
+
 * Implementation
 :PROPERTIES:
 :header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) ".elv")
@@ -88,11 +90,10 @@ The =-git-opts= function receives an optional git command, runs =git [command] -
 
 #+begin_src elvish
   fn -git-opts [@cmd]{
-    opts = [(_ = ?(git $@cmd -h 2>&1) | each [l]{
-        re:find '(--\w[\w-]*)' $l
-    })[groups][1][text]]
     map = [&]
-    each [k]{ map[$k] = $true } $opts
+    put (_ = ?(git $@cmd -h 2>&1) | each [l]{
+        re:find '(--\w[\w-]*)' $l
+    })[groups][1][text] | each [k]{ map[$k] = $true }
     keys $map | comp:decorate &style=$option-style
   }
 #+end_src
@@ -112,22 +113,26 @@ We define the functions that return different possible values for completions. T
 
 In this section we initialize the =$completions= map with the necessary data structure for =comp:expand= to provide the completions. We extract as much information as possible automatically from =git= itself.
 
-First , we fetch the list of valid git commands =git help -a=. Initially all of them are stored in the =completions= array with a function that produces  completions for their options, as extracted by the =-git-opts= function. Some of them get assigned more specific completions below.
+First , we fetch the list of valid git commands from the output of =git help -a=. Initially all of them are configured to produce  completions for their options, as extracted by the =-git-opts= function, and no other argument completions. Some of them get assigned more specific completions below.
 
 #+begin_src elvish
-  -cmds = [ (git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } }) ]
-  each [c]{ completions[$c] = [ { -git-opts $c } ] } $-cmds
+  git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
+    completions[$c] = [
+      &-opts= { -git-opts $c }
+      &-seq= [ { comp:empty } ]
+    ]
+  }
 #+end_src
 
 Next, we parse the defined aliases from the output of =git config --list=. We store the aliases in =completions= as well, but we check if an alias points to another valid command. In this case, we store the name of the target command as its value, which =comp:expand= interprets as "use the completions from the target command".
 
 #+begin_src elvish
-  -aliases = [(git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l })[groups][1 2][text]]
-  put $-aliases[(range (count $-aliases) &step=2 | each [x]{ put $x':'(+ $x 2) })] | each [p]{
-    if (has-key $completions $p[1]) {
-      completions[$p[0]] = $p[1]
+  git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
+    alias target = $m[groups][1 2][text]
+    if (has-key $completions $target) {
+      completions[$alias] = $target
     } else {
-      completions[$p[0]] = []
+      completions[$alias] = { comp:empty }
     }
   }
 #+end_src

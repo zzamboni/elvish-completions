@@ -22,11 +22,10 @@ fn -run-git-cmd [gitcmd @rest]{
 }
 
 fn -git-opts [@cmd]{
-  opts = [(_ = ?(git $@cmd -h 2>&1) | each [l]{
-      re:find '(--\w[\w-]*)' $l
-  })[groups][1][text]]
   map = [&]
-  each [k]{ map[$k] = $true } $opts
+  put (_ = ?(git $@cmd -h 2>&1) | each [l]{
+      re:find '(--\w[\w-]*)' $l
+  })[groups][1][text] | each [k]{ map[$k] = $true }
   keys $map | comp:decorate &style=$option-style
 }
 
@@ -37,15 +36,19 @@ fn TRACKED       { _ = ?(git ls-files 2>/dev/null) }
 fn BRANCHES      { _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
 fn REMOTES       { _ = ?(git remote 2>/dev/null) }
 
--cmds = [ (git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } }) ]
-each [c]{ completions[$c] = [ { -git-opts $c } ] } $-cmds
+git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
+  completions[$c] = [
+    &-opts= { -git-opts $c }
+    &-seq= [ { comp:empty } ]
+  ]
+}
 
--aliases = [(git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l })[groups][1 2][text]]
-put $-aliases[(range (count $-aliases) &step=2 | each [x]{ put $x':'(+ $x 2) })] | each [p]{
-  if (has-key $completions $p[1]) {
-    completions[$p[0]] = $p[1]
+git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
+  alias target = $m[groups][1 2][text]
+  if (has-key $completions $target) {
+    completions[$alias] = $target
   } else {
-    completions[$p[0]] = []
+    completions[$alias] = { comp:empty }
   }
 }
 
