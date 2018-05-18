@@ -22,6 +22,8 @@ This file is written in [[http://www.howardism.org/Technical/Emacs/literate-prog
 
 The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use in an Elvish session, but to write your own [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
 
+*NOTE: This module is very much in development, so the API, data structures, etc. may change at any moment.*
+
 As a first step, install the =elvish-completions= package using [[https://elvish.io/ref/epm.html][epm]]:
 
 #+begin_src elvish
@@ -237,7 +239,6 @@ Completion sequences can be further aggregated into /subcommand structures/ to p
     }
   }
 #+end_src
-
 
 ** Completion functions
 
