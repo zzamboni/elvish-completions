@@ -16,6 +16,14 @@ fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
 
 fn empty { nop }
 
+fn files [arg &regex='' &dirs-only=$false]{
+  put {$arg}*[match-hidden][nomatch-ok] | each [x]{
+    if (and (or (not $dirs-only) (-is-dir $x)) (or (eq $regex '') (re:match $regex $x))) {
+      put $x
+    }
+  }
+}
+
 # Forward declarations to be overriden later
 fn sequence { }
 fn subcommands { }

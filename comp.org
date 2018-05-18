@@ -2,7 +2,7 @@
 #+AUTHOR: Diego Zamboni
 #+EMAIL:  diego@zzamboni.org
 
-This module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use by end-users, but rather by Elvish developers who are writing [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
+The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use in an Elvish session, but to write your own [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
 
 This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:comp.elv][comp.elv]] for the generated file.
 
@@ -55,7 +55,6 @@ For this common case, =comp= provides a helper function called =comp:expand-wrap
 To create completions for new commands, your main task is to define a new completion definition. This is explained below, with examples of the different available structures and features.
 
 ** Completion definitions
-
 *** Base completion items
 
 The base building block is the "completion definition item", can be one of the following:
@@ -221,11 +220,24 @@ Completion sequences can be further aggregated into /subcommand structures/ to p
   }
 #+end_src
 
-=empty= produces no completions. It can be used to signal the end of a completion definition sequence when we don't want to repeat the last item.
+=comp:empty= produces no completions. It can be used to signal the end of a completion definition sequence when we don't want to repeat the last item.
 
 #+begin_src elvish
   fn empty { nop }
 #+end_src
+
+=comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&only-dirs= is =$true=, only directories are returned.
+
+#+begin_src elvish
+  fn files [arg &regex='' &dirs-only=$false]{
+    put {$arg}*[match-hidden][nomatch-ok] | each [x]{
+      if (and (or (not $dirs-only) (-is-dir $x)) (or (eq $regex '') (re:match $regex $x))) {
+        put $x
+      }
+    }
+  }
+#+end_src
+
 
 ** Completion functions
 

@@ -1,12 +1,8 @@
 use ./comp
+dir-style = 'blue;bold'
 completions = [
   &-seq= [
-    [arg]{ put {$arg}*[match-hidden][nomatch-ok] | each [x]{
-        if (-is-dir $x) {
-          edit:complex-candidate &code-suffix=/ &style='blue;bold' $x
-        }
-      }
-    }
+    [arg]{ comp:files $arg &dirs-only | comp:decorate &style=$dir-style }
     $nop~
   ]
 ]
