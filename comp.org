@@ -242,13 +242,7 @@ Completion sequences can be further aggregated into /subcommand structures/ to p
 
 ** Completion functions
 
-=comp:expand= is the main entry point which expands a "completion definition item" into its completion values. If it's a function, it gets executed. If it's a list, it's exploded to its elements. If it's a map which contains the =-seq= key, it gets processed with =comp:sequence=, and if it's a map without the =-seq= key, it gets passed to =comp:subcommands= (see below for the details of these functions). You can call =comp:sequence= or =comp:subcommands= directly if you want, but otherwise =comp:expand= will handle the different structures automatically.
-
-If the completion item is a function, the arguments that get passed to it depend on its signature:
-
-- If it receives no arguments, no arguments are passed
-- If it receives a single argument, it gets the current component of the command line
-- If it receives a rest argument, it receives the full current command line
+=comp:expand= is the main entry point which expands a "completion definition item" into its completion values. If it's a function, it gets executed with the current element of the command line as a single argument. If it's a list, it's exploded to its elements. If it's a map which contains the =-seq= key, it gets processed with =comp:sequence=, and if it's a map without the =-seq= key, it gets passed to =comp:subcommands= (see below for the details of these functions). You can call =comp:sequence= or =comp:subcommands= directly if you want, but otherwise =comp:expand= will handle the different structures automatically.
 
 #+begin_src elvish
   # Forward declarations to be overriden later
@@ -259,14 +253,7 @@ If the completion item is a function, the arguments that get passed to it depend
     arg = $cmd[-1]
     what = (kind-of $def)
     if (eq $what 'fn') {
-      fnargs = [ (count $def[arg-names]) (not-eq $def[rest-arg] '') ]
-      if (eq $fnargs [ 0 $false ]) {
-        $def
-      } elif (eq $fnargs [ 1 $false ]) {
-        $def $arg
-      } elif (eq $fnargs [ 0 $true ]) {
-        $def $@cmd
-      }
+      $def $arg
     } elif (eq $what 'list') {
       explode $def
     } elif (eq $what 'map') {
@@ -279,17 +266,21 @@ If the completion item is a function, the arguments that get passed to it depend
   }
 #+end_src
 
-=comp:sequence= receives a definition array and the current contents of the command line. The first element of =$cmd= is the command, and it should not be included in the definition.
+=comp:sequence= receives a definition map and the current contents of the command line. The first element of =$cmd= is the command, and it should not be included in the definition. If =$def= contains a key =-opts=, it is expanded and interpreted as a map of option definitions for =edit:complete-getopt=. If =-opts= produces a list of strings, they are considered as long option names and converted to the appropriate data structure.
 
 #+begin_src elvish
   sequence~ = [def @cmd]{
-    n = (count $cmd)
-    cmd-wo = [(each [p]{ if (not (re:match "^-" $p)) { put $p } } $cmd)]
-    n-wo = (count $cmd-wo)
-    if (and (eq $n-wo 2) (has-key $def -opts)) {
-      expand $def[-opts] $@cmd
+    opts = []
+    if (has-key $def -opts) {
+      expand $def[-opts] $@cmd | each [opt]{
+        if (eq (kind-of $opt) map) {
+          opts = [ $@opts $opt ]
+        } else {
+          opts = [$@opts [&long= $opt]]
+        }
+      }
     }
-    expand $def[-seq][(util:min (- $n-wo 2) (- (count $def[-seq]) 1))] $@cmd
+    edit:complete-getopt $cmd[1:] $opts [(explode $def[-seq])]
   }
 #+end_src
 

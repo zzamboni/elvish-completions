@@ -32,14 +32,7 @@ fn expand [def @cmd]{
   arg = $cmd[-1]
   what = (kind-of $def)
   if (eq $what 'fn') {
-    fnargs = [ (count $def[arg-names]) (not-eq $def[rest-arg] '') ]
-    if (eq $fnargs [ 0 $false ]) {
-      $def
-    } elif (eq $fnargs [ 1 $false ]) {
-      $def $arg
-    } elif (eq $fnargs [ 0 $true ]) {
-      $def $@cmd
-    }
+    $def $arg
   } elif (eq $what 'list') {
     explode $def
   } elif (eq $what 'map') {
@@ -52,13 +45,17 @@ fn expand [def @cmd]{
 }
 
 sequence~ = [def @cmd]{
-  n = (count $cmd)
-  cmd-wo = [(each [p]{ if (not (re:match "^-" $p)) { put $p } } $cmd)]
-  n-wo = (count $cmd-wo)
-  if (and (eq $n-wo 2) (has-key $def -opts)) {
-    expand $def[-opts] $@cmd
+  opts = []
+  if (has-key $def -opts) {
+    expand $def[-opts] $@cmd | each [opt]{
+      if (eq (kind-of $opt) map) {
+        opts = [ $@opts $opt ]
+      } else {
+        opts = [$@opts [&long= $opt]]
+      }
+    }
   }
-  expand $def[-seq][(util:min (- $n-wo 2) (- (count $def[-seq]) 1))] $@cmd
+  edit:complete-getopt $cmd[1:] $opts [(explode $def[-seq])]
 }
 
 subcommands~ = [def @cmd]{

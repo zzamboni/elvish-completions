@@ -22,19 +22,24 @@ fn -run-git-cmd [gitcmd @rest]{
 }
 
 fn -git-opts [@cmd]{
-  map = [&]
-  put (_ = ?(git $@cmd -h 2>&1) | each [l]{
-      re:find '(--\w[\w-]*)' $l
-  })[groups][1][text] | each [k]{ map[$k] = $true }
-  keys $map | comp:decorate &style=$option-style
+  _ = ?(git add -h) | each [l]{
+    re:find '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l
+  } | each [m]{
+    short long desc = $m[groups][1 2 3][text]
+    opt = [&]
+    if (not-eq $short '') { opt[short] = $short }
+    if (not-eq $long  '') { opt[long]  = $long  }
+    if (not-eq $desc  '') { opt[desc]  = $desc  }
+    put $opt
+  }
 }
 
-fn MODIFIED      { explode $status[local-modified] }
-fn UNTRACKED     { explode $status[untracked] }
-fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
-fn TRACKED       { _ = ?(git ls-files 2>/dev/null) }
-fn BRANCHES      { _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
-fn REMOTES       { _ = ?(git remote 2>/dev/null) }
+fn MODIFIED      [@_]{ explode $status[local-modified] }
+fn UNTRACKED     [@_]{ explode $status[untracked] }
+fn MOD-UNTRACKED [@_]{ MODIFIED; UNTRACKED }
+fn TRACKED       [@_]{ _ = ?(git ls-files 2>/dev/null) }
+fn BRANCHES      [@_]{ _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
+fn REMOTES       [@_]{ _ = ?(git remote 2>/dev/null) }
 
 git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
   completions[$c] = [
@@ -54,32 +59,32 @@ git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
 
 completions[add] = [
   &-opts= { -git-opts add }
-  &-seq= [ { MOD-UNTRACKED } ]
+  &-seq= [ $MOD-UNTRACKED~ ... ]
 ]
 completions[stage] =    add
 completions[checkout] = [
   &-opts= { -git-opts checkout }
-  &-seq= [ { MODIFIED; BRANCHES } ]
+  &-seq= [ [_]{ MODIFIED; BRANCHES } ... ]
 ]
 completions[mv] = [
   &-opts= { -git-opts mv }
-  &-seq= [ { TRACKED } ]
+  &-seq= [ $TRACKED~ ... ]
 ]
 completions[rm] = [
   &-opts= { -git-opts rm }
-  &-seq= [ { TRACKED } ]
+  &-seq= [ $TRACKED~ ... ]
 ]
 completions[diff] = [
   &-opts= { -git-opts diff }
-  &-seq= [ { MODIFIED; BRANCHES  } ]
+  &-seq= [ [_]{ MODIFIED; BRANCHES  } ... ]
 ]
 completions[push] = [
   &-opts= { -git-opts push }
-  &-seq= [ { REMOTES } { BRANCHES } ]
+  &-seq= [ $REMOTES~ $BRANCHES~ ]
 ]
 completions[merge] = [
   &-opts= { -git-opts merge }
-  &-seq= [ { BRANCHES } ]
+  &-seq= [ $BRANCHES~ ... ]
 ]
 
 completions[-opts] = { -git-opts }

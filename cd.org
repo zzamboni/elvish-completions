@@ -2,23 +2,18 @@
 #+property: header-args :mkdirp yes :comments no
 
 #+title: Elvish completions for cd
-#+author: occivink, SolitudeSF
-
-This code was originally written by [[https://github.com/occivink][occivink]] and posted at
-https://0x0.st/sqKT.txt and included in this package with
-permission. Improved version by SolitudeSF.
+#+author: Diego Zamboni <diego@zzamboni.org>
 
 #+begin_src elvish
   use ./comp
+
   dir-style = 'blue;bold'
+
   completions = [
     &-seq= [
       [arg]{ comp:files $arg &dirs-only | comp:decorate &style=$dir-style }
-      $nop~
     ]
   ]
 
-  edit:completion:arg-completer[cd] = [@cmd]{
-    comp:expand $completions $@cmd
-  }
+  edit:completion:arg-completer[cd] = (comp:expand-wrapper $completions)
 #+end_src
