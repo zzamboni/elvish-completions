@@ -24,6 +24,20 @@ fn files [arg &regex='' &dirs-only=$false]{
   }
 }
 
+&-opts= { vagrant -h | comp:extract-opts }
+
+fn extract-opts [@cmd &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$']{
+  all | each [l]{
+  re:find $regex $l } | each [m]{
+    short long desc = $m[groups][1 2 3][text]
+    opt = [&]
+    if (not-eq $short '') { opt[short] = $short }
+    if (not-eq $long  '') { opt[long]  = $long  }
+    if (not-eq $desc  '') { opt[desc]  = $desc  }
+    put $opt
+  }
+}
+
 # Forward declarations to be overriden later
 fn sequence { }
 fn subcommands { }
@@ -32,7 +46,14 @@ fn expand [def @cmd]{
   arg = $cmd[-1]
   what = (kind-of $def)
   if (eq $what 'fn') {
-    $def $arg
+    fnargs = [ (count $def[arg-names]) (not-eq $def[rest-arg] '') ]
+    if (eq $fnargs [ 0 $false ]) {
+      $def
+    } elif (eq $fnargs [ 1 $false ]) {
+      $def $arg
+    } elif (eq $fnargs [ 0 $true ]) {
+      $def $@cmd
+    }
   } elif (eq $what 'list') {
     explode $def
   } elif (eq $what 'map') {
@@ -45,27 +66,48 @@ fn expand [def @cmd]{
 }
 
 sequence~ = [def @cmd]{
-  opts = []
-  if (has-key $def -opts) {
-    expand $def[-opts] $@cmd | each [opt]{
-      if (eq (kind-of $opt) map) {
-        opts = [ $@opts $opt ]
-      } else {
-        opts = [$@opts [&long= $opt]]
-      }
+
+opts = []
+if (has-key $def -opts) {
+  expand $def[-opts] $@cmd | each [opt]{
+    if (eq (kind-of $opt) map) {
+      opts = [ $@opts $opt ]
+    } else {
+      opts = [$@opts [&long= $opt]]
     }
   }
-  edit:complete-getopt $cmd[1:] $opts [(explode $def[-seq])]
+}
+
+handlers = []
+explode $def[-seq] | each [f]{
+  new-f = $f
+  if (eq (kind-of $f) 'fn') {
+    fnargs = [ (count $f[arg-names]) (not-eq $f[rest-arg] '') ]
+    if (eq $fnargs [ 0 $false ]) {
+      new-f = [_]{ $f }
+    } elif (eq $fnargs [ 1 $false ]) {
+      new-f = $f
+    } elif (eq $fnargs [ 0 $true ]) {
+      new-f = [_]{ $f $@cmd }
+    }
+  } elif (eq (kind-of $f) 'list') {
+    new-f = [_]{ explode $f }
+  }
+  handlers = [ $@handlers $new-f ]
+}
+
+edit:complete-getopt $cmd[1:] $opts $handlers
 }
 
 subcommands~ = [def @cmd]{
   n = (count $cmd)
 
 if (eq $n 2) {
-  keys (dissoc $def -opts)
+  tmp-def = [ &-seq= [ [_]{ keys (dissoc $def -opts) } ] ]
   if (has-key $def -opts) {
-    expand $def[-opts] $@cmd
+    tmp-def[-opts] = $def[-opts]
   }
+  expand $tmp-def $@cmd
 
 } else {
     subcommand = $cmd[1]
