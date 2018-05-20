@@ -260,19 +260,7 @@ Typical use would be to populate an =-opts= element with something like this:
   }
 #+end_src
 
-=comp:extract-opts= takes input from the pipeline and extracts command-line options from its output, assuming the following common format by default:
-
-#+begin_example
-      -o, --option                Option description
-#+end_example
-
-The regular expression used to extract the options can be specified with the =&regex= option, which should have three groups, which get mapped to short, long and description, respectively.
-
-Typical use would be to populate an =-opts= element with something like this:
-
-#+begin_src elvish
-&-opts= { vagrant -h | comp:extract-opts }
-#+end_src
+=comp:extract-opts= takes input from the pipeline and parses it using a regular expression with three groups. Group #1 should be the short option letter, #2 is the long option name, and #3 is the description. At last one of short/long is mandatory, everything else is optional.
 
 #+begin_src elvish
   fn extract-opts [@cmd &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$']{

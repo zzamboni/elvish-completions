@@ -105,14 +105,16 @@ We store in =-ssh-options= all the possible configuration options, by parsing th
 
 #+begin_src elvish
   fn -gen-completions [&suffix='']{
-    put [ &-seq= [ [@cmd]{
+    put [
+      &-opts= [ [ &short= o ] ]
+      &-seq= [ [@cmd]{
           if (eq $cmd[-2] "-o") {
             explode $-ssh-options
           } else {
             -ssh-hosts | comp:decorate &suffix=$suffix
-            put '-o'
           }
         }
+        ...
       ]
     ]
   }

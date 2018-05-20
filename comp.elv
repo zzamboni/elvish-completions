@@ -24,8 +24,6 @@ fn files [arg &regex='' &dirs-only=$false]{
   }
 }
 
-&-opts= { vagrant -h | comp:extract-opts }
-
 fn extract-opts [@cmd &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$']{
   all | each [l]{
   re:find $regex $l } | each [m]{

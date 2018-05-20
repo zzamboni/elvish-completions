@@ -22,14 +22,16 @@ fn -ssh-hosts {
 )]
 
 fn -gen-completions [&suffix='']{
-  put [ &-seq= [ [@cmd]{
+  put [
+    &-opts= [ [ &short= o ] ]
+    &-seq= [ [@cmd]{
         if (eq $cmd[-2] "-o") {
           explode $-ssh-options
         } else {
           -ssh-hosts | comp:decorate &suffix=$suffix
-          put '-o'
         }
       }
+      ...
     ]
   ]
 }

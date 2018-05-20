@@ -22,8 +22,12 @@ fn -run-git-cmd [gitcmd @rest]{
 }
 
 fn -git-opts [@cmd]{
-  _ = ?(git add -h) | each [l]{
-    re:find '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l
+  _ = ?(git $@cmd -h 2>&1) | drop 1 | each [l]{
+    if (re:match '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l) {
+      re:find '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l
+    } else {
+      re:find '()--(\w[\w-]*)()' $l
+    }
   } | each [m]{
     short long desc = $m[groups][1 2 3][text]
     opt = [&]
@@ -34,12 +38,12 @@ fn -git-opts [@cmd]{
   }
 }
 
-fn MODIFIED      [@_]{ explode $status[local-modified] }
-fn UNTRACKED     [@_]{ explode $status[untracked] }
-fn MOD-UNTRACKED [@_]{ MODIFIED; UNTRACKED }
-fn TRACKED       [@_]{ _ = ?(git ls-files 2>/dev/null) }
-fn BRANCHES      [@_]{ _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
-fn REMOTES       [@_]{ _ = ?(git remote 2>/dev/null) }
+fn MODIFIED      { explode $status[local-modified] }
+fn UNTRACKED     { explode $status[untracked] }
+fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
+fn TRACKED       { _ = ?(git ls-files 2>/dev/null) }
+fn BRANCHES      { _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
+fn REMOTES       { _ = ?(git remote 2>/dev/null) }
 
 git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
   completions[$c] = [

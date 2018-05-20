@@ -4,7 +4,7 @@ dir-style = 'blue;bold'
 
 completions = [
   &-seq= [
-    [arg]{ comp:files $arg &dirs-only | comp:decorate &style=$dir-style }
+    [stem]{ comp:files $stem &dirs-only | comp:decorate &style=$dir-style &code-suffix=/ }
   ]
 ]
 
