@@ -1,6 +1,6 @@
-#+TITLE:  Completion framework for Elvish
-#+AUTHOR: Diego Zamboni
-#+EMAIL:  diego@zzamboni.org
+#+title: Completion framework for Elvish
+#+author: Diego Zamboni
+#+email: diego@zzamboni.org
 
 The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use in an Elvish session, but to write your own [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
 
@@ -42,16 +42,16 @@ The main entry point for this module is =comp:expand=. It receives two arguments
 - A "completion definition", which in general, indicates how the completions will be produced. See below for details.
 - The contents of the command line so far, as passed to the [[https://elvish.io/ref/edit.html#argument-completer][argument completer functions]].
 
-This function returns any available completions according to its definition and the current command line. It needs to be called from within the argument completer for the corresponding command, so that its result are offered by Elvish to the user. A typical way of doing this would be like this:
+This function returns any available completions according to its definition and the current command line. It needs to be called from within the argument completer for the corresponding command, so that its result are offered by Elvish to the user. A typical way of doing this would be like this (where =command= is the command for which you are defining the completions, and =$def= contains the completion definition data structure):
 
 #+begin_src elvish
-  edit:completion:arg-completer[cmd] = [@cmd]{ comp:expand $def $@cmd }
+  edit:completion:arg-completer[command] = [@cmd]{ comp:expand $def $@cmd }
 #+end_src
 
 For this common case, =comp= provides a helper function called =comp:expand-wrapper=, which receives only the definition argument and returns a /function/ which can be assigned directly to the corresponding elements of =$edit:completion:arg-completer=, so that the code above can be written like this:
 
 #+begin_src elvish
-  edit:completion:arg-completer[cmd] = (comp:expand-wrapper $def)
+  edit:completion:arg-completer[command] = (comp:expand-wrapper $def)
 #+end_src
 
 To create completions for new commands, your main task is to define a new completion definition. This is explained below, with examples of the different available structures and features.
@@ -72,8 +72,8 @@ The base building block is the "completion definition item", can be one of the f
 In this case, we define a function which receives the current "stem" (the part of the filename the user has typed so far) and expands all the files that match that prefix, then filters those which are directories, and returns them as completion possibilities. We pass the function directly as a completion item to =comp:expand=.
 
 #+begin_src elvish
-fn complete-dirs [arg]{ put $arg*[match-hidden] | each [x]{ if (-is-dir $x) { put $x } } }
-edit:completion:arg-completer[cd] = [@cmd]{ comp:expand $complete-dirs~ $@cmd }
+  fn complete-dirs [arg]{ put $arg*[match-hidden] | each [x]{ if (-is-dir $x) { put $x } } }
+  edit:completion:arg-completer[cd] = [@cmd]{ comp:expand $complete-dirs~ $@cmd }
 #+end_src
 
 I defined the =complete-dirs= function separately only for clarity - you can also embed the lambda directly as an argument to =comp:expand.=
@@ -81,13 +81,13 @@ I defined the =complete-dirs= function separately only for clarity - you can als
 In simple cases like the above, you can use the =comp:expand-wrapper= function to avoid defining the wrapper function by hand:
 
 #+begin_src elvish
-edit:completion:arg-completer[cd] = (comp:expand-wrapper $complete-dirs~)
+  edit:completion:arg-completer[cd] = (comp:expand-wrapper $complete-dirs~)
 #+end_src
 
-For file and directory completion, you can use the utility function =comp:files=.
+For file and directory completion, you can use the utility function =comp:files= instead of defining your own function (see [[*Utility functions][Utility functions]]):
 
 #+begin_src elvish
-edit:completion:arg-completer[cd] = (comp:expand-wrapper [arg]{ comp:files $arg &dirs-only })
+  edit:completion:arg-completer[cd] = (comp:expand-wrapper [arg]{ comp:files $arg &dirs-only })
 #+end_src
 
 *** Completion sequences
@@ -182,7 +182,7 @@ Completion sequences can be further aggregated into /subcommand structures/ to p
 =comp:extract-opts= takes input from the pipeline and extracts command-line options from its output, assuming the following common format by default:
 
 #+begin_example
-      -o, --option                Option description
+  -o, --option                Option description
 #+end_example
 
 The regular expression used to extract the options can be specified with the =&regex= option, which should have three groups, which get mapped to short, long and description, respectively.
@@ -190,7 +190,7 @@ The regular expression used to extract the options can be specified with the =&r
 Typical use would be to populate an =-opts= element with something like this:
 
 #+begin_src elvish
-&-opts= { vagrant -h | comp:extract-opts }
+  &-opts= { vagrant -h | comp:extract-opts }
 #+end_src
 
 *Example #8:* the =brew= completer shown before can be made to show package names and command-line options in different styles. Note how =comp:decorate= can get its arguments both as arguments (in the =-opts= assignments) and as pipeline input (in =-seq=). Also note the use of =comp:extract-opts= to generate the =-opts= elements from the output of the =brew= help commands.
@@ -316,19 +316,19 @@ Typical use would be to populate an =-opts= element with something like this:
   sequence~ = [def @cmd]{
 #+end_src
 
- If =$def= contains a key =-opts=, it has to be a list with one element for each command-line option. Element which are maps are assumed to be in the final format (with keys =short=, =long= and =desc=) and used as-is. Elements which are strings are considered as long option names and converted to the appropriate data structure.
+If =$def= contains a key =-opts=, it has to be a list with one element for each command-line option. Element which are maps are assumed to be in the final format (with keys =short=, =long= and =desc=) and used as-is. Elements which are strings are considered as long option names and converted to the appropriate data structure.
 
 #+begin_src elvish
-    opts = []
-    if (has-key $def -opts) {
-      expand $def[-opts] $@cmd | each [opt]{
-        if (eq (kind-of $opt) map) {
-          opts = [ $@opts $opt ]
-        } else {
-          opts = [$@opts [&long= $opt]]
-        }
+  opts = []
+  if (has-key $def -opts) {
+    expand $def[-opts] $@cmd | each [opt]{
+      if (eq (kind-of $opt) map) {
+        opts = [ $@opts $opt ]
+      } else {
+        opts = [$@opts [&long= $opt]]
       }
     }
+  }
 #+end_src
 
 We also preprocess the handlers. =edit:complete-getopt= expects each handler to receive only one argument (the current word in the command line), but =comp= allows handlers to receive no arguments, one argument (the current element of the command line) or multiple arguments (the whole command line), so we need to normalize them. Happily, Elvish's functional nature makes this easy by checking the arity of each handler and, if necessary, wrapping them in one-argument functions, but passing them the information they expect.
@@ -405,7 +405,7 @@ The wrapper functions receive only the =$def= argument, and return a /function/ 
 #+end_src
 
 #+begin_src elvish
-expand-wrapper~ = (-wrapper-gen $expand~)
-sequence-wrapper~ = (-wrapper-gen $sequence~)
-subcommands-wrapper~ = (-wrapper-gen $subcommands~)
+  expand-wrapper~ = (-wrapper-gen $expand~)
+  sequence-wrapper~ = (-wrapper-gen $sequence~)
+  subcommands-wrapper~ = (-wrapper-gen $subcommands~)
 #+end_src
