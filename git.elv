@@ -49,7 +49,7 @@ fn REMOTES       { _ = ?(git remote 2>/dev/null) }
 git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
   completions[$c] = [
     &-opts= { -git-opts $c }
-    &-seq= [ { comp:empty } ]
+    &-seq= [ ]
   ]
 }
 
@@ -58,7 +58,7 @@ git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
   if (has-key $completions $target) {
     completions[$alias] = $target
   } else {
-    completions[$alias] = { comp:empty }
+    completions[$alias] = [ &-seq= [] ]
   }
 }
 

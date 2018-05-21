@@ -129,7 +129,7 @@ First , we fetch the list of valid git commands from the output of =git help -a=
   git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
     completions[$c] = [
       &-opts= { -git-opts $c }
-      &-seq= [ { comp:empty } ]
+      &-seq= [ ]
     ]
   }
 #+end_src
@@ -142,7 +142,7 @@ Next, we parse the defined aliases from the output of =git config --list=. We st
     if (has-key $completions $target) {
       completions[$alias] = $target
     } else {
-      completions[$alias] = { comp:empty }
+      completions[$alias] = [ &-seq= [] ]
     }
   }
 #+end_src
