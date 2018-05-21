@@ -1,7 +1,7 @@
 use re
 use github.com/zzamboni/elvish-modules/util
 
-fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
+fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
   if (eq (count $input) 0) {
     input = [(all)]
   }

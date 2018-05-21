@@ -228,7 +228,7 @@ Typical use would be to populate an =-opts= element with something like this:
 =comp:decorate= maps its input through =edit:complex-candidate= with the given options. Can be passed the same options as [[https://elvish.io/ref/edit.html#argument-completer][edit:complex-candidate]]. In addition, if =&suffix= is specified, it is used to set both =&display-suffix= and =&code-suffix=.
 
 #+begin_src elvish
-  fn decorate [&code-suffix='' &display-suffix='' &suffix='' &style='' @input]{
+  fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
     if (eq (count $input) 0) {
       input = [(all)]
     }
