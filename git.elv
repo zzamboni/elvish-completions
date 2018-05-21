@@ -22,20 +22,21 @@ fn -run-git-cmd [gitcmd @rest]{
 }
 
 fn -git-opts [@cmd]{
-  _ = ?(git $@cmd -h 2>&1) | drop 1 | each [l]{
-    if (re:match '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l) {
-      re:find '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l
-    } else {
-      re:find '()--(\w[\w-]*)()' $l
-    }
-  } | each [m]{
-    short long desc = $m[groups][1 2 3][text]
-    opt = [&]
-    if (not-eq $short '') { opt[short] = $short }
-    if (not-eq $long  '') { opt[long]  = $long  }
-    if (not-eq $desc  '') { opt[desc]  = $desc  }
-    put $opt
+  -line = ''
+  regex = '(?:-(\w),?\s*)?(?:--([\w-]+).*?)?\s\s(\w.*)$'
+  if (eq $cmd []) {
+    regex = '()--(\w[\w-]*)()'
   }
+  _ = ?(git $@cmd -h 2>&1) | drop 1 | each [l]{
+    if (re:match '^\s+\w' $l) {
+      put $-line$l
+      -line = ''
+    } else {
+      put $-line
+      -line = $l
+    }
+  } |
+  comp:extract-opts &regex=$regex
 }
 
 fn MODIFIED      { explode $status[local-modified] }

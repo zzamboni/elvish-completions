@@ -86,24 +86,25 @@ The =-run-git-cmd= function executes a git-like command, with the given argument
   }
 #+end_src
 
-The =-git-opts= function receives an optional git command, runs =git [command] -h= and parses the output to extract the command line options.
+The =-git-opts= function receives an optional git command, runs =git [command] -h= and parses the output to extract the command line options. The parsing is done with =comp:extract-opts=, but we pre-process the output to join options whose descriptions appear in the next line.
 
 #+begin_src elvish
   fn -git-opts [@cmd]{
-    _ = ?(git $@cmd -h 2>&1) | drop 1 | each [l]{
-      if (re:match '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l) {
-        re:find '(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$' $l
-      } else {
-        re:find '()--(\w[\w-]*)()' $l
-      }
-    } | each [m]{
-      short long desc = $m[groups][1 2 3][text]
-      opt = [&]
-      if (not-eq $short '') { opt[short] = $short }
-      if (not-eq $long  '') { opt[long]  = $long  }
-      if (not-eq $desc  '') { opt[desc]  = $desc  }
-      put $opt
+    -line = ''
+    regex = '(?:-(\w),?\s*)?(?:--([\w-]+).*?)?\s\s(\w.*)$'
+    if (eq $cmd []) {
+      regex = '()--(\w[\w-]*)()'
     }
+    _ = ?(git $@cmd -h 2>&1) | drop 1 | each [l]{
+      if (re:match '^\s+\w' $l) {
+        put $-line$l
+        -line = ''
+      } else {
+        put $-line
+        -line = $l
+      }
+    } |
+    comp:extract-opts &regex=$regex
   }
 #+end_src
 
