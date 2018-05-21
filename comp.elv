@@ -32,7 +32,9 @@ fn extract-opts [@cmd &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$']{
     if (not-eq $short '') { opt[short] = $short }
     if (not-eq $long  '') { opt[long]  = $long  }
     if (not-eq $desc  '') { opt[desc]  = $desc  }
-    put $opt
+    if (or (has-key $opt short) (has-key $opt long)) {
+      put $opt
+    }
   }
 }
 

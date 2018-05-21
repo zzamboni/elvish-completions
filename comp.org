@@ -271,7 +271,9 @@ Typical use would be to populate an =-opts= element with something like this:
       if (not-eq $short '') { opt[short] = $short }
       if (not-eq $long  '') { opt[long]  = $long  }
       if (not-eq $desc  '') { opt[desc]  = $desc  }
-      put $opt
+      if (or (has-key $opt short) (has-key $opt long)) {
+        put $opt
+      }
     }
   }
 #+end_src
