@@ -248,7 +248,7 @@ Typical use would be to populate an =-opts= element with something like this:
   fn empty { nop }
 #+end_src
 
-=comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completcomed. If =&only-dirs= is =$true=, only directories are returned.
+=comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&only-dirs= is =$true=, only directories are returned.
 
 #+begin_src elvish
   fn files [arg &regex='' &dirs-only=$false]{
