@@ -100,24 +100,23 @@ edit:complete-getopt $cmd[1:] $opts $handlers
 }
 
 subcommands~ = [def @cmd]{
-  n = (count $cmd)
-
-if (eq $n 2) {
-  tmp-def = [ &-seq= [ [_]{ keys (dissoc $def -opts) } ] ]
-  if (has-key $def -opts) {
-    tmp-def[-opts] = $def[-opts]
-  }
-  expand $tmp-def $@cmd
-
-} else {
-    subcommand = $cmd[1]
-    if (has-key $def $subcommand) {
-      if (eq (kind-of $def[$subcommand]) 'string') {
-        subcommands $def $cmd[0] $def[$subcommand] (explode $cmd[2:])
-      } else {
-        expand $def[$subcommand] (explode $cmd[1:])
-      }
+  subcommands = [(keys (dissoc $def -opts))]
+  first-subcommand = [(range 1 (count $cmd) | each [i]{
+        if (has-value $subcommands $cmd[$i]) { put $cmd[$i] $i }
+  })]
+  if (not-eq $first-subcommand []) {
+    subcommand subcommand-pos = $first-subcommand[0 1]
+    if (eq (kind-of $def[$subcommand]) 'string') {
+      subcommands $def (explode $cmd[0:$subcommand-pos]) $def[$subcommand] (explode $cmd[(+ $subcommand-pos 1):])
+    } else {
+      expand $def[$subcommand] (explode $cmd[{$subcommand-pos}:])
     }
+  } else {
+    top-def = [ &-seq= [ { put $@subcommands }] ]
+    if (has-key $def -opts) {
+      top-def[-opts] = $def[-opts]
+    }
+    sequence $top-def $@cmd
   }
 }
 

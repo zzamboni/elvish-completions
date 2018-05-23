@@ -364,34 +364,32 @@ Finally, we call =edit:complete-getopt= with the corresponding data structures. 
 
 =comp:subcommands= receives a definition map and the current contents of the command line.
 
+The algorithm for =comp:subcommands= is as follows:
+
+1. Scan the current command until the first subcommand is found (i.e. an element which matches an existing key in =$def=), and if found, call =expand= with that definition, and with the command line at that position. We check if the definition is a string, in which case it's expected to be the name of some other command whose definition we need to use (to implement command aliases).
+2. If no subcommand is found, generate a sequence definition which returns the subcommand names for the first position (including any provided options).
+
+This seems backwards from what you would usually expect - I attempted at first multiple variations to expand the subcommands/top-options first, and then only expand the subcommand options and definition from the "tail" handlers, but this doesn't work because of the way =edit:complete-getops= works, the top-level options would get expanded for subcommands as well. This way, we catch the more specific case first (subcommand definition) and only if there's no subcommand in the command line yet, we do the top-level expansion. All with simple and clear code (you wouldn't believe some of the variations I tried while trying to get this to work)
+
 #+begin_src elvish
   subcommands~ = [def @cmd]{
-    n = (count $cmd)
-#+end_src
-
-If completion for the top-level subcommand is expected (=eq $n 2=), the top-level indices plus the global options (if provided in the =-opts= element).
-
-#+begin_src elvish
-  if (eq $n 2) {
-    tmp-def = [ &-seq= [ [_]{ keys (dissoc $def -opts) } ] ]
-    if (has-key $def -opts) {
-      tmp-def[-opts] = $def[-opts]
-    }
-    expand $tmp-def $@cmd
-#+end_src
-
-Otherwise, depending on the subcommand already provided, the corresponding element of the corresponding definition list is expanded. If the element is a string, it is considered and alias, so we call =subcommands= with the target command.
-
-#+begin_src elvish
-    } else {
-      subcommand = $cmd[1]
-      if (has-key $def $subcommand) {
-        if (eq (kind-of $def[$subcommand]) 'string') {
-          subcommands $def $cmd[0] $def[$subcommand] (explode $cmd[2:])
-        } else {
-          expand $def[$subcommand] (explode $cmd[1:])
-        }
+    subcommands = [(keys (dissoc $def -opts))]
+    first-subcommand = [(range 1 (count $cmd) | each [i]{
+          if (has-value $subcommands $cmd[$i]) { put $cmd[$i] $i }
+    })]
+    if (not-eq $first-subcommand []) {
+      subcommand subcommand-pos = $first-subcommand[0 1]
+      if (eq (kind-of $def[$subcommand]) 'string') {
+        subcommands $def (explode $cmd[0:$subcommand-pos]) $def[$subcommand] (explode $cmd[(+ $subcommand-pos 1):])
+      } else {
+        expand $def[$subcommand] (explode $cmd[{$subcommand-pos}:])
       }
+    } else {
+      top-def = [ &-seq= [ { put $@subcommands }] ]
+      if (has-key $def -opts) {
+        top-def[-opts] = $def[-opts]
+      }
+      sequence $top-def $@cmd
     }
   }
 #+end_src
