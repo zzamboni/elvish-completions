@@ -69,10 +69,10 @@ The base building block is the "completion definition item", can be one of the f
 
 *Example #1:* a simple completer for =cd=
 
-In this case, we define a function which receives the current "stem" (the part of the filename the user has typed so far) and expands all the files that match that prefix, then filters those which are directories, and returns them as completion possibilities. We pass the function directly as a completion item to =comp:expand=.
+In this case, we define a function which receives the current "stem" (the part of the filename the user has typed so far) and offers all the relevant files, then filters those which are directories, and returns them as completion possibilities. We pass the function directly as a completion item to =comp:expand=.
 
 #+begin_src elvish
-  fn complete-dirs [arg]{ put $arg*[match-hidden] | each [x]{ if (-is-dir $x) { put $x } } }
+  fn complete-dirs [arg]{ edit:complete-filename $arg | each [x]{ if (-is-dir $x) { put $x } } }
   edit:completion:arg-completer[cd] = [@cmd]{ comp:expand $complete-dirs~ $@cmd }
 #+end_src
 
@@ -96,7 +96,7 @@ Completion items can be aggregated in a /sequence of items/ when you need to pro
 
 - =-seq= (mandatory) containing an array of base definition items, which will be applied depending on their position within the command parameter sequence. If the the last element of the list is the string =...= (three periods), then next-to-last element of the list is repeated for all later arguments. If no completions should be provided past the last argument, simply omit the periods. If a sequence should produce no completions at all, you can use an empty list =[]=. If any specific elements of the sequence should have no completions, you can specify ={ comp:empty }= as its value.
 - =-opts= (optional) may contain a single definition item which produces a list of command-line options that are allowed at the beginning of the command, when no other arguments have been provided. Options can be specified in either of the following formats:
-  - As a string which gets converted to a long-style option; e.g. ='all'= to specify the =--all= option. The string must not contain the dashes at the beginning.
+  - As a string which gets converted to a long-style option; e.g. =all= to specify the =--all= option. The string must not contain the dashes at the beginning.
   - As a map which may contain the following keys: =short= for the short one-letter option, =long= for the long-option string, and =desc= for a descriptive string which gets shown in the completion menu. For example:
     #+begin_example
       [ &short= a &long=all &desc="Show all items" ]
@@ -252,7 +252,7 @@ Typical use would be to populate an =-opts= element with something like this:
 
 #+begin_src elvish
   fn files [arg &regex='' &dirs-only=$false]{
-    put {$arg}*[match-hidden][nomatch-ok] | each [x]{
+    edit:complete-filename $arg | each [x]{
       if (and (or (not $dirs-only) (-is-dir $x)) (or (eq $regex '') (re:match $regex $x))) {
         put $x
       }
