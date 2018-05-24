@@ -62,35 +62,16 @@ git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
   }
 }
 
-completions[add] = [
-  &-opts= { -git-opts add }
-  &-seq= [ $MOD-UNTRACKED~ ... ]
-]
-completions[stage] =    add
-completions[checkout] = [
-  &-opts= { -git-opts checkout }
-  &-seq= [ [_]{ MODIFIED; BRANCHES } ... ]
-]
-completions[mv] = [
-  &-opts= { -git-opts mv }
-  &-seq= [ $TRACKED~ ... ]
-]
-completions[rm] = [
-  &-opts= { -git-opts rm }
-  &-seq= [ $TRACKED~ ... ]
-]
-completions[diff] = [
-  &-opts= { -git-opts diff }
-  &-seq= [ [_]{ MODIFIED; BRANCHES  } ... ]
-]
-completions[push] = [
-  &-opts= { -git-opts push }
-  &-seq= [ $REMOTES~ $BRANCHES~ ]
-]
-completions[merge] = [
-  &-opts= { -git-opts merge }
-  &-seq= [ $BRANCHES~ ... ]
-]
+completions[add][-seq]      = [ $MOD-UNTRACKED~ ... ]
+completions[stage]          = add
+completions[checkout][-seq] = [ { MODIFIED; BRANCHES } ... ]
+completions[mv][-seq]       = [ $TRACKED~ ... ]
+completions[rm][-seq]       = [ $TRACKED~ ... ]
+completions[diff][-seq]     = [ { MODIFIED; BRANCHES  } ... ]
+completions[push][-seq]     = [ $REMOTES~ $BRANCHES~ ]
+completions[merge][-seq]    = [ $BRANCHES~ ... ]
+completions[init][-seq]     = [ [stem]{ put "."; comp:files $stem &dirs-only } ]
+completions[branch][-seq]   = [ $BRANCHES~ ... ]
 
 completions[-opts] = { -git-opts }
 
