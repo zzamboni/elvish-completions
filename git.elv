@@ -46,11 +46,29 @@ fn TRACKED       { _ = ?(git ls-files 2>/dev/null) }
 fn BRANCHES      { _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
 fn REMOTES       { _ = ?(git remote 2>/dev/null) }
 
+git-completions = [
+  &add=      [ $MOD-UNTRACKED~ ... ]
+  &stage=    add
+  &checkout= [ { MODIFIED; BRANCHES } ... ]
+  &mv=       [ $TRACKED~ ... ]
+  &rm=       [ $TRACKED~ ... ]
+  &diff=     [ { MODIFIED; BRANCHES  } ... ]
+  &push=     [ $REMOTES~ $BRANCHES~ ]
+  &merge=    [ $BRANCHES~ ... ]
+  &init=     [ [stem]{ put "."; comp:files $stem &dirs-only } ]
+  &branch=   [ $BRANCHES~ ... ]
+]
+
 git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
-  completions[$c] = [
-    &-opts= { -git-opts $c }
-    &-seq= [ ]
-  ]
+  seq = [ ]
+  if (has-key $git-completions $c) {
+    seq = $git-completions[$c]
+  }
+  if (eq (kind-of $seq 'string')) {
+    completions[$c] = $seq
+  } else {
+    completions[$c] = (comp:sequence $@seq &opts={ -git-opts $c })
+  }
 }
 
 git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
@@ -58,26 +76,8 @@ git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
   if (has-key $completions $target) {
     completions[$alias] = $target
   } else {
-    completions[$alias] = [ &-seq= [] ]
+    completions[$alias] = (comp:sequence)
   }
 }
 
-completions[add][-seq]      = [ $MOD-UNTRACKED~ ... ]
-completions[stage]          = add
-completions[checkout][-seq] = [ { MODIFIED; BRANCHES } ... ]
-completions[mv][-seq]       = [ $TRACKED~ ... ]
-completions[rm][-seq]       = [ $TRACKED~ ... ]
-completions[diff][-seq]     = [ { MODIFIED; BRANCHES  } ... ]
-completions[push][-seq]     = [ $REMOTES~ $BRANCHES~ ]
-completions[merge][-seq]    = [ $BRANCHES~ ... ]
-completions[init][-seq]     = [ [stem]{ put "."; comp:files $stem &dirs-only } ]
-completions[branch][-seq]   = [ $BRANCHES~ ... ]
-
-completions[-opts] = { -git-opts }
-
-fn git-completer [gitcmd @rest]{
-  status = (git:status)
-  comp:expand $completions $gitcmd $@rest
-}
-
-edit:completion:arg-completer[git] = $git-completer~
+edit:completion:arg-completer[git] = (comp:subcommands $completions &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts })

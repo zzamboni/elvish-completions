@@ -104,33 +104,25 @@ We store in =-ssh-options= all the possible configuration options, by parsing th
 =-gen-completions= dynamically generates the completion definition for ssh-related commands. We use this because the completions for =ssh= and =scp=, for example, are the same except for the suffix that needs to be added to the hostnames in the completion. The completion definition in all cases provides either the list of valid options (if the previous argument is =-o=, or otherwise =-o= plus the list of hosts (with the appropriate suffix).
 
 #+begin_src elvish
-  fn -gen-completions [&suffix='']{
-    put [
-      &-opts= [ [ &short= o ] ]
-      &-seq= [ [@cmd]{
-          if (eq $cmd[-2] "-o") {
-            explode $-ssh-options
-          } else {
-            -ssh-hosts | comp:decorate &suffix=$suffix
-          }
-        }
-        ...
-      ]
-    ]
+  ssh-opts = [ [ &short= o ] ]
+
+  fn -gen-ssh-completions [&suffix='']{
+    put [@cmd]{
+      if (eq $cmd[-2] "-o") {
+        explode $-ssh-options
+      } else {
+        -ssh-hosts | comp:decorate &suffix=$suffix
+      }
+    } ...
   }
 #+end_src
 
 We use =-gen-completions= to produce the actual completion definitions for =ssh= and =scp=.
 
-#+begin_src elvish
-  completions-ssh = (-gen-completions)
-  completions-scp = (-gen-completions &suffix=":")
-#+end_src
-
 We initialize the completions by using =comp:expand-wrapper= to produce the functions with the corresponding definition and assign them to the corresponding elements of =$edit:completion:arg-completer=.
 
 #+begin_src elvish
-  edit:completion:arg-completer[ssh]  = (comp:expand-wrapper $completions-ssh)
-  edit:completion:arg-completer[sftp] = (comp:expand-wrapper $completions-ssh)
-  edit:completion:arg-completer[scp]  = (comp:expand-wrapper $completions-scp)
+  edit:completion:arg-completer[ssh]  = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions))
+  edit:completion:arg-completer[sftp] = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions))
+  edit:completion:arg-completer[scp]  = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions &suffix=":"))
 #+end_src

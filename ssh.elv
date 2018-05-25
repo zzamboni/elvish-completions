@@ -21,24 +21,18 @@ fn -ssh-hosts {
     comp:decorate &suffix='='
 )]
 
-fn -gen-completions [&suffix='']{
-  put [
-    &-opts= [ [ &short= o ] ]
-    &-seq= [ [@cmd]{
-        if (eq $cmd[-2] "-o") {
-          explode $-ssh-options
-        } else {
-          -ssh-hosts | comp:decorate &suffix=$suffix
-        }
-      }
-      ...
-    ]
-  ]
+ssh-opts = [ [ &short= o ] ]
+
+fn -gen-ssh-completions [&suffix='']{
+  put [@cmd]{
+    if (eq $cmd[-2] "-o") {
+      explode $-ssh-options
+    } else {
+      -ssh-hosts | comp:decorate &suffix=$suffix
+    }
+  } ...
 }
 
-completions-ssh = (-gen-completions)
-completions-scp = (-gen-completions &suffix=":")
-
-edit:completion:arg-completer[ssh]  = (comp:expand-wrapper $completions-ssh)
-edit:completion:arg-completer[sftp] = (comp:expand-wrapper $completions-ssh)
-edit:completion:arg-completer[scp]  = (comp:expand-wrapper $completions-scp)
+edit:completion:arg-completer[ssh]  = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions))
+edit:completion:arg-completer[sftp] = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions))
+edit:completion:arg-completer[scp]  = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions &suffix=":"))

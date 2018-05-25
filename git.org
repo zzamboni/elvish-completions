@@ -121,16 +121,38 @@ We define the functions that return different possible values for completions. T
 
 ** Initialization of completion definitions
 
-In this section we initialize the =$completions= map with the necessary data structure for =comp:expand= to provide the completions. We extract as much information as possible automatically from =git= itself.
+In this section we initialize the =$completions= map with the necessary data structure for =comp:subcommands= to provide the completions. We extract as much information as possible automatically from =git= itself.
 
-First , we fetch the list of valid git commands from the output of =git help -a=. Initially all of them are configured to produce  completions for their options, as extracted by the =-git-opts= function, and no other argument completions. Some of them get assigned more specific completions below.
+First, we store in =$git-completions= the specialized completions for some git commands. As all command sequences are automatically initialized with their respective options below. Each sequence is a list of functions which return the possible completions at that point in the command. The =...= as a last element in some of them indicates that the last completion function is repeated for all further argument positions. The completion can also be a string, in which case it means an alias for some other command.
+
+#+begin_src elvish
+git-completions = [
+  &add=      [ $MOD-UNTRACKED~ ... ]
+  &stage=    add
+  &checkout= [ { MODIFIED; BRANCHES } ... ]
+  &mv=       [ $TRACKED~ ... ]
+  &rm=       [ $TRACKED~ ... ]
+  &diff=     [ { MODIFIED; BRANCHES  } ... ]
+  &push=     [ $REMOTES~ $BRANCHES~ ]
+  &merge=    [ $BRANCHES~ ... ]
+  &init=     [ [stem]{ put "."; comp:files $stem &dirs-only } ]
+  &branch=   [ $BRANCHES~ ... ]
+]
+#+end_src
+
+Next , we fetch the list of valid git commands from the output of =git help -a=, and store the corresponding completion sequences in =$completions=. All of them are configured to produce  completions for their options, as extracted by the =-git-opts= function. Those which have corresponding definitions in =$git-completions= get assigned those.
 
 #+begin_src elvish
   git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
-    completions[$c] = [
-      &-opts= { -git-opts $c }
-      &-seq= [ ]
-    ]
+    seq = [ ]
+    if (has-key $git-completions $c) {
+      seq = $git-completions[$c]
+    }
+    if (eq (kind-of $seq 'string')) {
+      completions[$c] = $seq
+    } else {
+      completions[$c] = (comp:sequence $@seq &opts={ -git-opts $c })
+    }
   }
 #+end_src
 
@@ -142,43 +164,13 @@ Next, we parse the defined aliases from the output of =git config --list=. We st
     if (has-key $completions $target) {
       completions[$alias] = $target
     } else {
-      completions[$alias] = [ &-seq= [] ]
+      completions[$alias] = (comp:sequence)
     }
-  }
-#+end_src
-
-Now, we add to =$completions= the specialized completions for some git commands. As all command sequences are automatically initialized with their respective options, we only assign new values to the corresponding =-seq= element. Each sequence is a list of functions which return the possible completions at that point in the command. The =...= as a last element in some of them indicates that the last completion function is repeated for all further argument positions.
-
-#+begin_src elvish
-  completions[add][-seq]      = [ $MOD-UNTRACKED~ ... ]
-  completions[stage]          = add
-  completions[checkout][-seq] = [ { MODIFIED; BRANCHES } ... ]
-  completions[mv][-seq]       = [ $TRACKED~ ... ]
-  completions[rm][-seq]       = [ $TRACKED~ ... ]
-  completions[diff][-seq]     = [ { MODIFIED; BRANCHES  } ... ]
-  completions[push][-seq]     = [ $REMOTES~ $BRANCHES~ ]
-  completions[merge][-seq]    = [ $BRANCHES~ ... ]
-  completions[init][-seq]     = [ [stem]{ put "."; comp:files $stem &dirs-only } ]
-  completions[branch][-seq]   = [ $BRANCHES~ ... ]
-#+end_src
-
-We also store in =$completions= the list of global git options, extracted from the output of =git --help=.
-
-#+begin_src elvish
-  completions[-opts] = { -git-opts }
-#+end_src
-
-Finally, we define =git-completer= to simply fetch the current git status information, and call =comp:expand= with out completion definitions.
-
-#+begin_src elvish
-  fn git-completer [gitcmd @rest]{
-    status = (git:status)
-    comp:expand $completions $gitcmd $@rest
   }
 #+end_src
 
 We initialize the completions by assigning the function to the corresponding element of =$edit:completion:arg-completer=. Note that =git:completer= can also be used to complete for other commands which accept git-like commands, such as =vcsh=.
 
 #+begin_src elvish
-  edit:completion:arg-completer[git] = $git-completer~
+  edit:completion:arg-completer[git] = (comp:subcommands $completions &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts })
 #+end_src

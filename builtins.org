@@ -41,16 +41,12 @@ Load the completion framework and other libraries.
 Completer for the =use= command, which includes all modules in =~/.elvish/lib/=.
 
 #+begin_src elvish
-  use-completer = [
-    &-seq= [
-      { put ~/.elvish/lib/**[nomatch-ok].elv | each [m]{
-          if (not (-is-dir $m)) {
-            re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
-          }
+  edit:completion:arg-completer[use] = (comp:sequence {
+      put ~/.elvish/lib/**[nomatch-ok].elv | each [m]{
+        if (not (-is-dir $m)) {
+          re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
         }
       }
-    ]
-  ]
-
-  edit:completion:arg-completer[use] = (comp:expand-wrapper $use-completer)
+    }
+  )
 #+end_src
