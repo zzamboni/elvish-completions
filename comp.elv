@@ -38,69 +38,65 @@ fn extract-opts [@cmd &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$']{
   }
 }
 
-# Forward declarations to be overriden later
-fn -sequence { }
-fn -subcommands { }
+fn -handler-arity [func]{
+  fnargs = [ (count $func[arg-names]) (not-eq $func[rest-arg] '') ]
+  if (eq $fnargs [ 0 $false ]) {
+    put no-args
+  } elif (eq $fnargs [ 1 $false ]) {
+    put one-arg
+  } elif (eq $fnargs [ 0 $true ]) {
+    put rest-arg
+  }
+}
 
-fn -expand [def @cmd]{
+fn -expand-item [def @cmd]{
   arg = $cmd[-1]
   what = (kind-of $def)
   if (eq $what 'fn') {
-    fnargs = [ (count $def[arg-names]) (not-eq $def[rest-arg] '') ]
-    if (eq $fnargs [ 0 $false ]) {
-      $def
-    } elif (eq $fnargs [ 1 $false ]) {
-      $def $arg
-    } elif (eq $fnargs [ 0 $true ]) {
-      $def $@cmd
-    }
+    [ &no-args=  { $def }
+      &one-arg=  { $def $arg }
+      &rest-arg= { $def $@cmd }
+    ][(-handler-arity $def)]
   } elif (eq $what 'list') {
     explode $def
-  } elif (eq $what 'map') {
-    if (has-key $def '-seq') {
-      -sequence $def $@cmd
-    } else {
-      -subcommands $def $@cmd
-    }
+  } else {
+    echo (edit:styled "comp:-expand-item: invalid item of type "$what": "(to-string $def) red) >/dev/tty
   }
 }
 
--sequence~ = [def @cmd]{
+fn -expand-sequence [seq @cmd &opts=[]]{
 
-opts = []
-if (has-key $def -opts) {
-  -expand $def[-opts] $@cmd | each [opt]{
-    if (eq (kind-of $opt) map) {
-      opts = [ $@opts $opt ]
-    } else {
-      opts = [$@opts [&long= $opt]]
+final-opts = [(
+    -expand-item $opts $@cmd | each [opt]{
+      if (eq (kind-of $opt) map) {
+        put $opt
+      } else {
+        put [&long= $opt]
+      }
     }
-  }
-}
+)]
 
-handlers = []
-explode $def[-seq] | each [f]{
-  new-f = $f
-  if (eq (kind-of $f) 'fn') {
-    fnargs = [ (count $f[arg-names]) (not-eq $f[rest-arg] '') ]
-    if (eq $fnargs [ 0 $false ]) {
-      new-f = [_]{ $f }
-    } elif (eq $fnargs [ 1 $false ]) {
-      new-f = $f
-    } elif (eq $fnargs [ 0 $true ]) {
-      new-f = [_]{ $f $@cmd }
+final-handlers = [(
+    explode $seq | each [f]{
+      if (eq (kind-of $f) 'fn') {
+        put [
+          &no-args=  [_]{ $f }
+          &one-arg=  $f
+          &rest-arg= [_]{ $f $@cmd }
+        ][(-handler-arity $f)]
+      } elif (eq (kind-of $f) 'list') {
+        put [_]{ explode $f }
+      } elif (and (eq (kind-of $f) 'string') (eq $f '...')) {
+        put $f
+      }
     }
-  } elif (eq (kind-of $f) 'list') {
-    new-f = [_]{ explode $f }
-  }
-  handlers = [ $@handlers $new-f ]
+)]
+
+edit:complete-getopt $cmd[1:] $final-opts $final-handlers
 }
 
-edit:complete-getopt $cmd[1:] $opts $handlers
-}
-
--subcommands~ = [def @cmd]{
-  subcommands = [(keys (dissoc $def -opts))]
+fn -expand-subcommands [def @cmd &opts=[]]{
+  subcommands = [(keys $def)]
   n = (count $cmd)
   kw = [(range 1 $n | each [i]{
         if (has-value $subcommands $cmd[$i]) { put $cmd[$i] $i }
@@ -109,43 +105,39 @@ edit:complete-getopt $cmd[1:] $opts $handlers
     sc sc-pos = $kw[0 1]
     if (eq (kind-of $def[$sc]) 'string') {
       cmd[$sc-pos] = $def[$sc]
-      -subcommands $def $@cmd
+      -expand-subcommands &opts=$opts $def $@cmd
     } else {
       $def[$sc] (explode $cmd[{$sc-pos}:])
     }
   } else {
-    top-def = [ &-seq= [ { put $@subcommands }] ]
-    if (has-key $def -opts) {
-      top-def[-opts] = $def[-opts]
-    }
-    -sequence $top-def $@cmd
+    top-def = [ { put $@subcommands } ]
+    -expand-sequence &opts=$opts $top-def $@cmd
   }
 }
-
-fn -wrapper-gen [func]{
-  put [def &pre-hook=$nop~ &post-hook=$nop~ &post-filter=$all~]{
-    put [@cmd]{
-      $pre-hook $@cmd
-      result = [($func $def $@cmd)]
-      $post-hook $result $@cmd
-      put $@result
-    }
-  }
-}
-
--expand-wrapper~      = (-wrapper-gen $-expand~)
--sequence-wrapper~    = (-wrapper-gen $-sequence~)
--subcommands-wrapper~ = (-wrapper-gen $-subcommands~)
 
 fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
-  -expand-wrapper $item &pre-hook=$pre-hook &post-hook=$post-hook
+  put [@cmd]{
+    $pre-hook $@cmd
+    result = [(-expand-item $item $@cmd)]
+    $post-hook $result $@cmd
+    put $@result
+  }
 }
 
 fn sequence [@sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-  -sequence-wrapper [&-seq=$sequence &-opts=$opts] &pre-hook=$pre-hook &post-hook=$post-hook
+  put [@cmd]{
+    $pre-hook $@cmd
+    result = [(-expand-sequence &opts=$opts $sequence $@cmd)]
+    $post-hook $result $@cmd
+    put $@result
+  }
 }
 
 fn subcommands [def &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-  subcmd-map = (assoc $def -opts $opts)
-  -subcommands-wrapper $subcmd-map &pre-hook=$pre-hook &post-hook=$post-hook
+  put [@cmd]{
+    $pre-hook $@cmd
+    result = [(-expand-subcommands &opts=$opts $def $@cmd)]
+    $post-hook $result $@cmd
+    put $@result
+  }
 }

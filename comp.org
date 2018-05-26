@@ -37,7 +37,7 @@ From the file where you will define your completions, load this module:
   use github.com/zzamboni/elvish-completions/comp
 #+end_src
 
-The main entry point for this module is =comp:-expand=. It receives two arguments:
+The main entry point for this module is =comp:-expand-item=. It receives two arguments:
 
 - A "completion definition", which in general, indicates how the completions will be produced. See below for details.
 - The contents of the command line so far, as passed to the [[https://elvish.io/ref/edit.html#argument-completer][argument completer functions]].
@@ -288,102 +288,101 @@ Typical use would be to populate an =-opts= element with something like this:
   }
 #+end_src
 
-
-** Completion functions
-
-=comp:-expand= is the main entry point which expands a "completion definition item" into its completion values. If it's a function, it gets executed with the current element of the command line as a single argument. If it's a list, it's exploded to its elements. If it's a map which contains the =-seq= key, it gets processed with =comp:-sequence=, and if it's a map without the =-seq= key, it gets passed to =comp:-subcommands= (see below for the details of these functions). You can call =comp:-sequence= or =comp:-subcommands= directly if you want, but otherwise =comp:-expand= will handle the different structures automatically.
+Determine the arity of a function and return a string representation, for internal use.
 
 #+begin_src elvish
-  # Forward declarations to be overriden later
-  fn -sequence { }
-  fn -subcommands { }
-
-  fn -expand [def @cmd]{
-    arg = $cmd[-1]
-    what = (kind-of $def)
-    if (eq $what 'fn') {
-      fnargs = [ (count $def[arg-names]) (not-eq $def[rest-arg] '') ]
-      if (eq $fnargs [ 0 $false ]) {
-        $def
-      } elif (eq $fnargs [ 1 $false ]) {
-        $def $arg
-      } elif (eq $fnargs [ 0 $true ]) {
-        $def $@cmd
-      }
-    } elif (eq $what 'list') {
-      explode $def
-    } elif (eq $what 'map') {
-      if (has-key $def '-seq') {
-        -sequence $def $@cmd
-      } else {
-        -subcommands $def $@cmd
-      }
+  fn -handler-arity [func]{
+    fnargs = [ (count $func[arg-names]) (not-eq $func[rest-arg] '') ]
+    if (eq $fnargs [ 0 $false ]) {
+      put no-args
+    } elif (eq $fnargs [ 1 $false ]) {
+      put one-arg
+    } elif (eq $fnargs [ 0 $true ]) {
+      put rest-arg
     }
   }
 #+end_src
 
-=comp:-sequence= receives a definition map and the current contents of the command line, and uses =edit:complete-getopt= to actually generate the completions. For this, we need to make sure the options and argument handler data structures are in accordance to what =complete-getopt= expects.
+** Completion functions
+
+=comp:-expand-item= is the main entry point which expands a "completion definition item" into its completion values. If it's a function, it gets executed with the current element of the command line as a single argument. If it's a list, it's exploded to its elements. If it's a map which contains the =-seq= key, it gets processed with =comp:-expand-sequence=, and if it's a map without the =-seq= key, it gets passed to =comp:-expand-subcommands= (see below for the details of these functions). You can call =comp:-expand-sequence= or =comp:-expand-subcommands= directly if you want, but otherwise =comp:-expand-item= will handle the different structures automatically.
 
 #+begin_src elvish
-  -sequence~ = [def @cmd]{
+  fn -expand-item [def @cmd]{
+    arg = $cmd[-1]
+    what = (kind-of $def)
+    if (eq $what 'fn') {
+      [ &no-args=  { $def }
+        &one-arg=  { $def $arg }
+        &rest-arg= { $def $@cmd }
+      ][(-handler-arity $def)]
+    } elif (eq $what 'list') {
+      explode $def
+    } else {
+      echo (edit:styled "comp:-expand-item: invalid item of type "$what": "(to-string $def) red) >/dev/tty
+    }
+  }
+#+end_src
+
+=comp:-expand-sequence= receives a definition map and the current contents of the command line, and uses =edit:complete-getopt= to actually generate the completions. For this, we need to make sure the options and argument handler data structures are in accordance to what =complete-getopt= expects.
+
+#+begin_src elvish
+  fn -expand-sequence [seq @cmd &opts=[]]{
 #+end_src
 
 If =$def= contains a key =-opts=, it has to be a list with one element for each command-line option. Element which are maps are assumed to be in the final format (with keys =short=, =long= and =desc=) and used as-is. Elements which are strings are considered as long option names and converted to the appropriate data structure.
 
 #+begin_src elvish
-  opts = []
-  if (has-key $def -opts) {
-    -expand $def[-opts] $@cmd | each [opt]{
-      if (eq (kind-of $opt) map) {
-        opts = [ $@opts $opt ]
-      } else {
-        opts = [$@opts [&long= $opt]]
+  final-opts = [(
+      -expand-item $opts $@cmd | each [opt]{
+        if (eq (kind-of $opt) map) {
+          put $opt
+        } else {
+          put [&long= $opt]
+        }
       }
-    }
-  }
+  )]
 #+end_src
 
 We also preprocess the handlers. =edit:complete-getopt= expects each handler to receive only one argument (the current word in the command line), but =comp= allows handlers to receive no arguments, one argument (the current element of the command line) or multiple arguments (the whole command line), so we need to normalize them. Happily, Elvish's functional nature makes this easy by checking the arity of each handler and, if necessary, wrapping them in one-argument functions, but passing them the information they expect.
 
 #+begin_src elvish
-  handlers = []
-  explode $def[-seq] | each [f]{
-    new-f = $f
-    if (eq (kind-of $f) 'fn') {
-      fnargs = [ (count $f[arg-names]) (not-eq $f[rest-arg] '') ]
-      if (eq $fnargs [ 0 $false ]) {
-        new-f = [_]{ $f }
-      } elif (eq $fnargs [ 1 $false ]) {
-        new-f = $f
-      } elif (eq $fnargs [ 0 $true ]) {
-        new-f = [_]{ $f $@cmd }
+  final-handlers = [(
+      explode $seq | each [f]{
+        if (eq (kind-of $f) 'fn') {
+          put [
+            &no-args=  [_]{ $f }
+            &one-arg=  $f
+            &rest-arg= [_]{ $f $@cmd }
+          ][(-handler-arity $f)]
+        } elif (eq (kind-of $f) 'list') {
+          put [_]{ explode $f }
+        } elif (and (eq (kind-of $f) 'string') (eq $f '...')) {
+          put $f
+        }
       }
-    } elif (eq (kind-of $f) 'list') {
-      new-f = [_]{ explode $f }
-    }
-    handlers = [ $@handlers $new-f ]
-  }
+  )]
 #+end_src
 
 Finally, we call =edit:complete-getopt= with the corresponding data structures. It expects the current line /without/ the initial command, so we remove that as well.
 
 #+begin_src elvish
-    edit:complete-getopt $cmd[1:] $opts $handlers
+    edit:complete-getopt $cmd[1:] $final-opts $final-handlers
   }
 #+end_src
 
-=comp:-subcommands= receives a definition map and the current contents of the command line.
+=comp:-expand-subcommands= receives a definition map and the current contents of the command line.
 
-The algorithm for =comp:-subcommands= is as follows:
+The algorithm for =comp:-expand-subcommands= is as follows:
 
-1. Scan the current command until the first subcommand is found (i.e. an element which matches an existing key in =$def=), and if found, call =-expand= with that definition, and with the command line at that position. We check if the definition is a string, in which case it's expected to be the name of some other command whose definition we need to use (to implement command aliases).
+1. Scan the current command until the first subcommand is found (i.e. an element which matches an existing key in =$def=), and if found, call =-expand-item= with that definition, and with the command line at that position. We check if the definition is a string, in which case it's expected to be the name of some other command whose definition we need to use (to implement command aliases).
 2. If no subcommand is found, generate a sequence definition which returns the subcommand names for the first position (including any provided options).
 
 This seems backwards from what you would usually expect - I attempted at first multiple variations to expand the subcommands/top-options first, and then only expand the subcommand options and definition from the "tail" handlers, but this doesn't work because of the way =edit:complete-getops= works, the top-level options would get expanded for subcommands as well. This way, we catch the more specific case first (subcommand definition) and only if there's no subcommand in the command line yet, we do the top-level expansion. All with simple and clear code (you wouldn't believe some of the variations I tried while trying to get this to work)
 
 #+begin_src elvish
-  -subcommands~ = [def @cmd]{
-    subcommands = [(keys (dissoc $def -opts))]
+  fn -expand-subcommands [def @cmd &opts=[]]{
+    subcommands = [(keys $def)]
     n = (count $cmd)
     kw = [(range 1 $n | each [i]{
           if (has-value $subcommands $cmd[$i]) { put $cmd[$i] $i }
@@ -392,54 +391,44 @@ This seems backwards from what you would usually expect - I attempted at first m
       sc sc-pos = $kw[0 1]
       if (eq (kind-of $def[$sc]) 'string') {
         cmd[$sc-pos] = $def[$sc]
-        -subcommands $def $@cmd
+        -expand-subcommands &opts=$opts $def $@cmd
       } else {
         $def[$sc] (explode $cmd[{$sc-pos}:])
       }
     } else {
-      top-def = [ &-seq= [ { put $@subcommands }] ]
-      if (has-key $def -opts) {
-        top-def[-opts] = $def[-opts]
-      }
-      -sequence $top-def $@cmd
+      top-def = [ { put $@subcommands } ]
+      -expand-sequence &opts=$opts $top-def $@cmd
     }
   }
 #+end_src
 
 ** Completion wrapper functions
 
-The wrapper functions receive only the =$def= argument, and return a /function/ which takes the current command and call the corresponding completion function with the correct arguments. We have a wrapper-generator function which takes the function to call and returns the appropriate wrapper function. Very meta.
-
-#+begin_src elvish
-  fn -wrapper-gen [func]{
-    put [def &pre-hook=$nop~ &post-hook=$nop~ &post-filter=$all~]{
-      put [@cmd]{
-        $pre-hook $@cmd
-        result = [($func $def $@cmd)]
-        $post-hook $result $@cmd
-        put $@result
-      }
-    }
-  }
-#+end_src
-
-#+begin_src elvish
-  -expand-wrapper~      = (-wrapper-gen $-expand~)
-  -sequence-wrapper~    = (-wrapper-gen $-sequence~)
-  -subcommands-wrapper~ = (-wrapper-gen $-subcommands~)
-#+end_src
-
 #+begin_src elvish
   fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
-    -expand-wrapper $item &pre-hook=$pre-hook &post-hook=$post-hook
+    put [@cmd]{
+      $pre-hook $@cmd
+      result = [(-expand-item $item $@cmd)]
+      $post-hook $result $@cmd
+      put $@result
+    }
   }
 
   fn sequence [@sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-    -sequence-wrapper [&-seq=$sequence &-opts=$opts] &pre-hook=$pre-hook &post-hook=$post-hook
+    put [@cmd]{
+      $pre-hook $@cmd
+      result = [(-expand-sequence &opts=$opts $sequence $@cmd)]
+      $post-hook $result $@cmd
+      put $@result
+    }
   }
 
   fn subcommands [def &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-    subcmd-map = (assoc $def -opts $opts)
-    -subcommands-wrapper $subcmd-map &pre-hook=$pre-hook &post-hook=$post-hook
+    put [@cmd]{
+      $pre-hook $@cmd
+      result = [(-expand-subcommands &opts=$opts $def $@cmd)]
+      $post-hook $result $@cmd
+      put $@result
+    }
   }
 #+end_src
