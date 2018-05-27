@@ -107,13 +107,13 @@ We store in =-ssh-options= all the possible configuration options, by parsing th
   ssh-opts = [ [ &short= o ] ]
 
   fn -gen-ssh-completions [&suffix='']{
-    put [@cmd]{
-      if (eq $cmd[-2] "-o") {
-        explode $-ssh-options
-      } else {
-        -ssh-hosts | comp:decorate &suffix=$suffix
-      }
-    } ...
+    put [ [@cmd]{
+        if (eq $cmd[-2] "-o") {
+          explode $-ssh-options
+        } else {
+          -ssh-hosts | comp:decorate &suffix=$suffix
+        }
+    } ... ]
   }
 #+end_src
 

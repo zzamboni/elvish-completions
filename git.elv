@@ -67,7 +67,7 @@ git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | eac
   if (eq (kind-of $seq 'string')) {
     completions[$c] = $seq
   } else {
-    completions[$c] = (comp:sequence $@seq &opts={ -git-opts $c })
+    completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
   }
 }
 
@@ -76,7 +76,7 @@ git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
   if (has-key $completions $target) {
     completions[$alias] = $target
   } else {
-    completions[$alias] = (comp:sequence)
+    completions[$alias] = (comp:sequence [])
   }
 }
 

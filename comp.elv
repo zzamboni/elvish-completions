@@ -46,6 +46,8 @@ fn -handler-arity [func]{
     put one-arg
   } elif (eq $fnargs [ 0 $true ]) {
     put rest-arg
+  } else {
+    put other-args
   }
 }
 
@@ -56,6 +58,7 @@ fn -expand-item [def @cmd]{
     [ &no-args=  { $def }
       &one-arg=  { $def $arg }
       &rest-arg= { $def $@cmd }
+      &other-args= { put '<completion-fn-arity-error>' }
     ][(-handler-arity $def)]
   } elif (eq $what 'list') {
     explode $def
@@ -83,6 +86,7 @@ final-handlers = [(
           &no-args=  [_]{ $f }
           &one-arg=  $f
           &rest-arg= [_]{ $f $@cmd }
+          &other-args= [_]{ put '<completion-fn-arity-error>' }
         ][(-handler-arity $f)]
       } elif (eq (kind-of $f) 'list') {
         put [_]{ explode $f }
@@ -124,7 +128,7 @@ fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
   }
 }
 
-fn sequence [@sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
+fn sequence [sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
   put [@cmd]{
     $pre-hook $@cmd
     result = [(-expand-sequence &opts=$opts $sequence $@cmd)]

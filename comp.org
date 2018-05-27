@@ -299,6 +299,8 @@ Determine the arity of a function and return a string representation, for intern
       put one-arg
     } elif (eq $fnargs [ 0 $true ]) {
       put rest-arg
+    } else {
+      put other-args
     }
   }
 #+end_src
@@ -315,6 +317,7 @@ Determine the arity of a function and return a string representation, for intern
       [ &no-args=  { $def }
         &one-arg=  { $def $arg }
         &rest-arg= { $def $@cmd }
+        &other-args= { put '<completion-fn-arity-error>' }
       ][(-handler-arity $def)]
     } elif (eq $what 'list') {
       explode $def
@@ -354,6 +357,7 @@ We also preprocess the handlers. =edit:complete-getopt= expects each handler to 
             &no-args=  [_]{ $f }
             &one-arg=  $f
             &rest-arg= [_]{ $f $@cmd }
+            &other-args= [_]{ put '<completion-fn-arity-error>' }
           ][(-handler-arity $f)]
         } elif (eq (kind-of $f) 'list') {
           put [_]{ explode $f }
@@ -414,7 +418,7 @@ This seems backwards from what you would usually expect - I attempted at first m
     }
   }
 
-  fn sequence [@sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
+  fn sequence [sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
     put [@cmd]{
       $pre-hook $@cmd
       result = [(-expand-sequence &opts=$opts $sequence $@cmd)]

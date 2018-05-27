@@ -24,13 +24,13 @@ fn -ssh-hosts {
 ssh-opts = [ [ &short= o ] ]
 
 fn -gen-ssh-completions [&suffix='']{
-  put [@cmd]{
-    if (eq $cmd[-2] "-o") {
-      explode $-ssh-options
-    } else {
-      -ssh-hosts | comp:decorate &suffix=$suffix
-    }
-  } ...
+  put [ [@cmd]{
+      if (eq $cmd[-2] "-o") {
+        explode $-ssh-options
+      } else {
+        -ssh-hosts | comp:decorate &suffix=$suffix
+      }
+  } ... ]
 }
 
 edit:completion:arg-completer[ssh]  = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions))
