@@ -7,7 +7,11 @@ completions = [&]
 
 status = [&]
 
-option-style = gray
+modified-style = yellow
+untracked-style = red
+tracked-style = ''
+branch-style = blue
+remote-style = cyan
 
 fn -run-git-cmd [gitcmd @rest]{
   gitcmds = [$gitcmd]
@@ -39,12 +43,16 @@ fn -git-opts [@cmd]{
   comp:extract-opts &regex=$regex
 }
 
-fn MODIFIED      { explode $status[local-modified] }
-fn UNTRACKED     { explode $status[untracked] }
+fn MODIFIED      { explode $status[local-modified] | comp:decorate &style=$modified-style }
+fn UNTRACKED     { explode $status[untracked] | comp:decorate &style=$untracked-style }
 fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
-fn TRACKED       { _ = ?(git ls-files 2>/dev/null) }
-fn BRANCHES      { _ = ?(git branch --list --all --format '%(refname:short)' 2>/dev/null) }
-fn REMOTES       { _ = ?(git remote 2>/dev/null) }
+fn TRACKED       { _ = ?(-run-git-cmd git ls-files 2>/dev/null) | comp:decorate &style=$tracked-style }
+fn BRANCHES      [&all=$false]{
+  -allarg = []
+  if $all { -allarg = ['--all'] }
+  _ = ?(-run-git-cmd git branch --list (explode $-allarg) --format '%(refname:short)' 2>/dev/null |
+comp:decorate &display-suffix=' (branch)' &style=$branch-style) }
+fn REMOTES       { _ = ?(-run-git-cmd git remote 2>/dev/null | comp:decorate &style=$remote-style ) }
 
 git-completions = [
   &add=      [ $MOD-UNTRACKED~ ... ]
@@ -53,7 +61,7 @@ git-completions = [
   &mv=       [ $TRACKED~ ... ]
   &rm=       [ $TRACKED~ ... ]
   &diff=     [ { MODIFIED; BRANCHES  } ... ]
-  &push=     [ $REMOTES~ $BRANCHES~ ]
+  &push=     [ $REMOTES~ { BRANCHES &all } ]
   &merge=    [ $BRANCHES~ ... ]
   &init=     [ [stem]{ put "."; comp:files $stem &dirs-only } ]
   &branch=   [ $BRANCHES~ ... ]
