@@ -117,7 +117,7 @@ The =$ssh-opts= array stores the definitions of command-line options. For now we
   ]
 #+end_src
 
-=-ssh-host-completions= dynamically generates the completion definition for hostnames for ssh-related commands. The hostnames are extracted from the user's ssh config files by the =-ssh-hosts= function defined above. The completions for =ssh= and =scp=, for example, are the same except for the suffix that needs to be added to the hostnames in the completion, so we allow the suffix to be specified as an option. We also allow for a username to be specified at the beginning of the hostname (=user@==), and still generate the completions correctly, so you can type =ssh user@ho<Tab>= and the corresponding hostnames will be completed.
+=-ssh-host-completions= dynamically generates the completion definition for hostnames for ssh-related commands. The hostnames are extracted from the user's ssh config files by the =-ssh-hosts= function defined above. The completions for =ssh= and =scp=, for example, are the same except for the suffix that needs to be added to the hostnames in the completion, so we allow the suffix to be specified as an option. We also allow for a username to be specified at the beginning of the hostname (=user@=), and still generate the completions correctly, so you can type =ssh user@abc<Tab>= and the corresponding hostnames will be completed.
 
 #+begin_src elvish
   fn -ssh-host-completions [arg &suffix='']{
