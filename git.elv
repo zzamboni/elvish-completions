@@ -80,4 +80,6 @@ git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
   }
 }
 
-edit:completion:arg-completer[git] = (comp:subcommands $completions &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts })
+edit:completion:arg-completer[git] = (comp:subcommands $completions \
+  &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
+)

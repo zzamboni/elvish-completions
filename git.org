@@ -172,5 +172,7 @@ Next, we parse the defined aliases from the output of =git config --list=. We st
 We initialize the completions by assigning the function to the corresponding element of =$edit:completion:arg-completer=. Note that =git:completer= can also be used to complete for other commands which accept git-like commands, such as =vcsh=.
 
 #+begin_src elvish
-  edit:completion:arg-completer[git] = (comp:subcommands $completions &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts })
+  edit:completion:arg-completer[git] = (comp:subcommands $completions \
+    &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
+  )
 #+end_src
