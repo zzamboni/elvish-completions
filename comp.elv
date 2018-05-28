@@ -78,6 +78,26 @@ final-opts = [(
     }
 )]
 
+fn -has-and-is [def opt]{
+  or (and (has-key $def short) (eq '-'$def[short] $opt)) (and (has-key $def long) (eq '--'$def[long] $opt))
+}
+
+if (>= (count $cmd) 3) {
+  prev-opt = [&]
+  prev-word = $cmd[-2]
+  each [o]{
+    if (-has-and-is $o $prev-word) {
+      prev-opt = $o
+    }
+  } $final-opts
+  if (and (not-eq $prev-opt [&]) (has-key $prev-opt arg-completer)) {
+    -expand-item $prev-opt[arg-completer] $@cmd
+    if (and (has-key $prev-opt arg-required) $prev-opt[arg-required]) {
+      return
+    }
+  }
+}
+
 final-handlers = [(
     explode $seq | each [f]{
       if (eq (kind-of $f) 'fn') {
