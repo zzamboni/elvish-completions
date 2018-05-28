@@ -31,6 +31,17 @@ In your =rc.elv=, load this module:
 
 Now you can type =git<space>=, press ~Tab~ and see the corresponding completions. All =git= commands are automatically completed with their options (automatically extracted from their help messages). Some commands get more specific completions, including =add=, =push=, =checkout=, =diff= and a few others. Git aliases are automatically detected as well. Aliases which point to a single =git= command are automatically completed like the original command.
 
+Several components are colorized, you can configure the styles by setting these variables (default values shown):
+
+#+begin_src elvish
+  comp:modified-style = yellow
+  comp:untracked-style = red
+  comp:tracked-style = ''
+  comp:branch-style = blue
+  comp:remote-style = cyan
+#+end_src
+
+
 * Implementation
 :PROPERTIES:
 :header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) ".elv")
