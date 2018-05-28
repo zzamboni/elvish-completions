@@ -7,11 +7,11 @@ completions = [&]
 
 status = [&]
 
-modified-style = yellow
+modified-style  = yellow
 untracked-style = red
-tracked-style = ''
-branch-style = blue
-remote-style = cyan
+tracked-style   = ''
+branch-style    = blue
+remote-style    = cyan
 
 fn -run-git-cmd [gitcmd @rest]{
   gitcmds = [$gitcmd]

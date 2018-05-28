@@ -34,13 +34,12 @@ Now you can type =git<space>=, press ~Tab~ and see the corresponding completions
 Several components are colorized, you can configure the styles by setting these variables (default values shown):
 
 #+begin_src elvish
-  comp:modified-style = yellow
+  comp:modified-style  = yellow
   comp:untracked-style = red
-  comp:tracked-style = ''
-  comp:branch-style = blue
-  comp:remote-style = cyan
+  comp:tracked-style   = ''
+  comp:branch-style    = blue
+  comp:remote-style    = cyan
 #+end_src
-
 
 * Implementation
 :PROPERTIES:
@@ -76,11 +75,11 @@ We store the output of =git:status= in a global variable to make it easier to ac
 The =$*-style= variables contains the style (as per =edit:styled=) to use for different completion components the completion menu. Set to =''= (an empty string) to show in the normal style.
 
 #+begin_src elvish
-  modified-style = yellow
+  modified-style  = yellow
   untracked-style = red
-  tracked-style = ''
-  branch-style = blue
-  remote-style = cyan
+  tracked-style   = ''
+  branch-style    = blue
+  remote-style    = cyan
 #+end_src
 
 ** Utility functions
