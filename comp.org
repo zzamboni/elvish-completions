@@ -243,13 +243,18 @@ Typical use would be to populate an =&opts= element with something like this:
   }
 #+end_src
 
-=comp:extract-opts= takes input from the pipeline and parses it using a regular expression with three groups. Group #1 should be the short option letter, #2 is the long option name, and #3 is the description. At last one of short/long is mandatory, everything else is optional.
+*** comp:extract-opts
+
+=comp:extract-opts= takes input from the pipeline and parses it using a regular expression with three groups. By default, group #1 should be the short option letter, #2 is the long option name, and #3 is the description, but this is configurable with the =&regex-map= option. At last one of short/long is mandatory, everything else is optional. Returns an option map with keys =short=, =long= and =desc=, depending on the available groups. Only produces an output if at least =short= or =long= has a value.
 
 #+begin_src elvish
-  fn extract-opts [@cmd &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$']{
+  fn extract-opts [@cmd
+    &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$'
+    &regex-map=[&short=1 &long=2 &desc=3]
+  ]{
     all | each [l]{
     re:find $regex $l } | each [m]{
-      short long desc = $m[groups][1 2 3][text]
+      short long desc = $m[groups][$regex-map[short long desc]][text]
       opt = [&]
       if (not-eq $short '') { opt[short] = $short }
       if (not-eq $long  '') { opt[long]  = $long  }

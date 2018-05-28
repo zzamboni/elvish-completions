@@ -24,10 +24,13 @@ fn files [arg &regex='' &dirs-only=$false]{
   }
 }
 
-fn extract-opts [@cmd &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$']{
+fn extract-opts [@cmd
+  &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$'
+  &regex-map=[&short=1 &long=2 &desc=3]
+]{
   all | each [l]{
   re:find $regex $l } | each [m]{
-    short long desc = $m[groups][1 2 3][text]
+    short long desc = $m[groups][$regex-map[short long desc]][text]
     opt = [&]
     if (not-eq $short '') { opt[short] = $short }
     if (not-eq $long  '') { opt[long]  = $long  }
