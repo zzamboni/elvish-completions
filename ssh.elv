@@ -15,24 +15,36 @@ fn -ssh-hosts {
   keys $hosts
 }
 
--ssh-options = [(
-    _ = ?(cat (man -w ssh_config 2>/dev/null)) |
-    eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } } |
-    comp:decorate &suffix='='
-)]
-
-ssh-opts = [ [ &short= o ] ]
-
-fn -gen-ssh-completions [&suffix='']{
-  put [ [@cmd]{
-      if (eq $cmd[-2] "-o") {
-        explode $-ssh-options
-      } else {
-        -ssh-hosts | comp:decorate &suffix=$suffix
-      }
-  } ... ]
+-ssh-options = []
+fn -gen-ssh-options {
+  if (eq $-ssh-options []) {
+    -ssh-options = [(
+        _ = ?(cat (man -w ssh_config 2>/dev/null)) |
+        eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } } |
+        comp:decorate &suffix='='
+    )]
+  }
+  explode $-ssh-options
 }
 
-edit:completion:arg-completer[ssh]  = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions))
-edit:completion:arg-completer[sftp] = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions))
-edit:completion:arg-completer[scp]  = (comp:sequence &opts=$ssh-opts (-gen-ssh-completions &suffix=":"))
+ssh-opts = [
+  [ &short= o
+    &arg-required= $true
+    &arg-completer= $-gen-ssh-options~
+  ]
+]
+
+fn -ssh-host-completions [arg &suffix='']{
+  user-given = (joins '' [(re:find '^(.*@)' $arg)[groups][1][text]])
+  -ssh-hosts | each [host]{ put $user-given$host } | comp:decorate &suffix=$suffix
+}
+
+edit:completion:arg-completer[ssh]  = (comp:sequence &opts=$ssh-opts [$-ssh-host-completions~])
+edit:completion:arg-completer[sftp] = (comp:sequence &opts=$ssh-opts [$-ssh-host-completions~])
+edit:completion:arg-completer[scp]  = (comp:sequence &opts=$ssh-opts [
+    [arg]{
+      -ssh-host-completions &suffix=":" $arg
+      edit:complete-filename $arg
+    }
+    ...
+])
