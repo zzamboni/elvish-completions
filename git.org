@@ -2,9 +2,9 @@
 #+author: Diego Zamboni
 #+email: diego@zzamboni.org
 
-This module implements completions for =git= or for tools which allow git commands to be passed, like =vcsh=.
+This module implements completions for =git=.
 
-Some original inspiration from https://github.com/occivink/config/blob/master/.elvish/rc.elv.
+Some original inspiration from [[ https://github.com/occivink/config/blob/master/.elvish/rc.elv.][occivink's git completer]].
 
 * Table of Contents                                            :TOC:noexport:
 - [[#usage][Usage]]
@@ -33,12 +33,12 @@ Now you can type =git<space>=, press ~Tab~ and see the corresponding completions
 
 Several components are colorized, you can configure the styles by setting these variables (default values shown):
 
-#+begin_src elvish
-  comp:modified-style  = yellow
-  comp:untracked-style = red
-  comp:tracked-style   = ''
-  comp:branch-style    = blue
-  comp:remote-style    = cyan
+#+begin_src elvish :noweb-ref git-completion-styles
+  modified-style  = yellow
+  untracked-style = red
+  tracked-style   = ''
+  branch-style    = blue
+  remote-style    = cyan
 #+end_src
 
 * Implementation
@@ -58,7 +58,7 @@ We first load a number of libraries, including =comp=, the Elvish completion fra
   use github.com/zzamboni/elvish-modules/util
 #+end_src
 
-This is where the big completion-definition map will get build up progressively below.
+This is where the big completion-definition map will get progressively built.
 
 #+begin_src elvish
   completions = [&]
@@ -74,17 +74,15 @@ We store the output of =git:status= in a global variable to make it easier to ac
 
 The =$*-style= variables contains the style (as per =edit:styled=) to use for different completion components the completion menu. Set to =''= (an empty string) to show in the normal style.
 
-#+begin_src elvish
-  modified-style  = yellow
-  untracked-style = red
-  tracked-style   = ''
-  branch-style    = blue
-  remote-style    = cyan
+#+begin_src elvish :noweb yes
+  <<git-completion-styles>>
 #+end_src
 
 ** Utility functions
 
 The =-run-git-cmd= function executes a git-like command, with the given arguments.  =$gitcmd= can be a single command, a multi-word command or a function and still be executed correctly. We cannot simply run =$gitcmd $@rest= because Elvish always interprets the first token (the head) to be the command.  One example of a multi-word =$gitcmd= is ="vcsh <repo>"=, after which any git subcommand is valid.
+
+(This is not fully integrated for other commands yet and is not strictly needed for regular =git= completion, but is left here as a building block.)
 
 #+begin_src elvish
   fn -run-git-cmd [gitcmd @rest]{
@@ -117,8 +115,7 @@ The =-git-opts= function receives an optional git command, runs =git [command] -
         put $-line
         -line = $l
       }
-    } |
-    comp:extract-opts &regex=$regex
+    } | comp:extract-opts &regex=$regex
   }
 #+end_src
 

@@ -39,8 +39,7 @@ fn -git-opts [@cmd]{
       put $-line
       -line = $l
     }
-  } |
-  comp:extract-opts &regex=$regex
+  } | comp:extract-opts &regex=$regex
 }
 
 fn MODIFIED      { explode $status[local-modified] | comp:decorate &style=$modified-style }

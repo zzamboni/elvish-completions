@@ -25,6 +25,30 @@ In your =rc.elv=, load this module:
   use github.com/zzamboni/elvish-completions/builtins
 #+end_src
 
+Included completions:
+
+- =use= (completes all modules in =~/.elvish/lib=). Example (the "lack module name" message is normal and part of Elvish's as-you-type compilation, it goes away when you add a module name):
+  #+begin_example
+    [~]─> use <Tab>
+     COMPLETING argument _
+    compilation error: 3-3 in [tty]: lack module name
+     elvish-dev/epm/epm                               github.com/zzamboni/elvish-modules/alias
+     github.com/iwoloschin/elvish-packages/powernerd  github.com/zzamboni/elvish-modules/atlas
+     github.com/iwoloschin/elvish-packages/python     github.com/zzamboni/elvish-modules/bang-bang
+     github.com/iwoloschin/elvish-packages/update     github.com/zzamboni/elvish-modules/dir
+     github.com/muesli/elvish-libs/git                github.com/zzamboni/elvish-modules/git-vcsh
+     github.com/muesli/elvish-libs/theme/muesli       github.com/zzamboni/elvish-modules/long-running-notifications
+     github.com/muesli/elvish-libs/theme/powerline    github.com/zzamboni/elvish-modules/nix
+     github.com/xiaq/edit.elv/compl/go                github.com/zzamboni/elvish-modules/opsgenie
+     github.com/xiaq/edit.elv/smart-matcher           github.com/zzamboni/elvish-modules/prompt-hooks
+     github.com/zzamboni/elvish-completions/builtins  github.com/zzamboni/elvish-modules/proxy
+     github.com/zzamboni/elvish-completions/cd        github.com/zzamboni/elvish-modules/semver
+     github.com/zzamboni/elvish-completions/comp      github.com/zzamboni/elvish-modules/terminal-title
+     github.com/zzamboni/elvish-completions/git       github.com/zzamboni/elvish-modules/util
+     github.com/zzamboni/elvish-completions/ssh       github.com/zzamboni/elvish-themes/chain
+     github.com/zzamboni/elvish-completions/vcsh      private
+  #+end_example
+
 * Implementation
 :PROPERTIES:
 :header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) ".elv")

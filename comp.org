@@ -2,7 +2,7 @@
 #+author: Diego Zamboni
 #+email: diego@zzamboni.org
 
-The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use in an Elvish session, but to write your own [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
+The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use in an Elvish session, but to write your own [[https://elvish.io/ref/edit.html#completion-api][argument completers]]. You can find the completers I have written in my [[https://github.com/zzamboni/elvish-completions][zzamboni/elvish-completions]] repository.
 
 This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:comp.elv][comp.elv]] for the generated file.
 
