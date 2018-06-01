@@ -74,3 +74,17 @@ Completer for the =use= command, which includes all modules in =~/.elvish/lib/=.
     }]
   )
 #+end_src
+
+Completers for the =epm= commands.
+
+#+begin_src elvish
+  use epm
+
+  epm-completer-one  = (comp:sequence [ $epm:list~ ])
+  epm-completer-many = (comp:sequence [ $epm:list~ ...])
+  edit:completion:arg-completer[epm:query]     = $epm-completer-one
+  edit:completion:arg-completer[epm:metadata]  = $epm-completer-one
+  edit:completion:arg-completer[epm:dest]      = $epm-completer-one
+  edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
+  edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
+#+end_src
