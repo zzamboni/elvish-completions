@@ -25,9 +25,8 @@ fn -run-git-cmd [gitcmd @rest]{
   $cmd (explode $gitcmds[1:]) $@rest
 }
 
-fn -git-opts [@cmd]{
+fn -git-opts [@cmd &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?.*?\s\s(\w.*)$']{
   -line = ''
-  regex = '(?:-(\w),?\s*)?(?:--([\w-]+).*?)?\s\s(\w.*)$'
   if (eq $cmd []) {
     regex = '()--(\w[\w-]*)()'
   }
