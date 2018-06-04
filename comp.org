@@ -296,16 +296,24 @@ We start by loading some basic modules we need.
 
 #+begin_src elvish
   fn extract-opts [@cmd
-    &regex='(?:-(\w),\s*)?--([\w-]+).*?\s\s(\w.*)$'
-    &regex-map=[&short=1 &long=2 &desc=3]
+    &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
+    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
   ]{
     all | each [l]{
     re:find $regex $l } | each [m]{
-      short long desc = $m[groups][$regex-map[short long desc]][text]
+      short long desc arg-optional arg-mandatory = $m[groups][$regex-map[short long desc arg-optional arg-mandatory]][text]
       opt = [&]
       if (not-eq $short '') { opt[short] = $short }
       if (not-eq $long  '') { opt[long]  = $long  }
       if (not-eq $desc  '') { opt[desc]  = $desc  }
+      if (not-eq $arg-optional '')  {
+        opt[arg-optional]  = (not-eq $arg-optional '')
+        opt[arg-desc]      = $arg-optional
+      }
+      if (not-eq $arg-mandatory '') {
+        opt[arg-mandatory] = (not-eq $arg-mandatory '')
+        opt[arg-desc]      = $arg-mandatory
+      }
       if (or (has-key $opt short) (has-key $opt long)) {
         put $opt
       }
@@ -368,6 +376,10 @@ We first preprocess the options. If =&opts= is provided, it has to be a list wit
   final-opts = [(
       -expand-item $opts $@cmd | each [opt]{
         if (eq (kind-of $opt) map) {
+          if (has-key $opt arg-desc) {
+            if (not (has-key $opt desc)) { opt[desc] = '' }
+            opt[desc] = (joins ' ' ["arg: "$opt[arg-desc] - $opt[desc]])
+          }
           put $opt
         } else {
           put [&long= $opt]
