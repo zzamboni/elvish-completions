@@ -101,10 +101,13 @@ The =-run-git-cmd= function executes a git-like command, with the given argument
 The =-git-opts= function receives an optional git command, runs =git [command] -h= and parses the output to extract the command line options. The parsing is done with =comp:extract-opts=, but we pre-process the output to join options whose descriptions appear in the next line.
 
 #+begin_src elvish
-  fn -git-opts [@cmd &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?.*?\s\s(\w.*)$']{
+  fn -git-opts [@cmd
+    &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]| (\S+))?\s*?\s\s(\w.*)$'
+    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
+  ]{
     -line = ''
     if (eq $cmd []) {
-      regex = '()--(\w[\w-]*)()'
+      regex = '()--(\w[\w-]*)()()()'
     }
     _ = ?(git $@cmd -h 2>&1) | drop 1 | each [l]{
       if (re:match '^\s+\w' $l) {
@@ -114,7 +117,7 @@ The =-git-opts= function receives an optional git command, runs =git [command] -
         put $-line
         -line = $l
       }
-    } | comp:extract-opts &regex=$regex
+    } | comp:extract-opts &regex=$regex &regex-map=$regex-map
   }
 #+end_src
 

@@ -25,10 +25,13 @@ fn -run-git-cmd [gitcmd @rest]{
   $cmd (explode $gitcmds[1:]) $@rest
 }
 
-fn -git-opts [@cmd &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?.*?\s\s(\w.*)$']{
+fn -git-opts [@cmd
+  &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]| (\S+))?\s*?\s\s(\w.*)$'
+  &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
+]{
   -line = ''
   if (eq $cmd []) {
-    regex = '()--(\w[\w-]*)()'
+    regex = '()--(\w[\w-]*)()()()'
   }
   _ = ?(git $@cmd -h 2>&1) | drop 1 | each [l]{
     if (re:match '^\s+\w' $l) {
@@ -38,7 +41,7 @@ fn -git-opts [@cmd &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?.*?\s\s(\w.*)$']{
       put $-line
       -line = $l
     }
-  } | comp:extract-opts &regex=$regex
+  } | comp:extract-opts &regex=$regex &regex-map=$regex-map
 }
 
 fn MODIFIED      { explode $status[local-modified] | comp:decorate &style=$modified-style }
