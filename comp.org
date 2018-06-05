@@ -202,10 +202,12 @@ Finally, completion sequences can be aggregated into /subcommand structures/ tog
 ▶ (edit:complex-candidate bar &code-suffix='' &display-suffix='' &style=31)
 #+end_src
 
-=comp:extract-opts= takes input from the pipeline and extracts command-line options from its output, assuming the following common format by default:
+=comp:extract-opts= takes input from the pipeline and extracts command-line option data structures from its output. By default it understand the following common formats:
 
 #+begin_example
   -o, --option                Option description
+  -p, --print[=<what>]        Option with an optional argument
+      --select <type>         Option with a mandatory argument
 #+end_example
 
 Typical use would be to populate an =&opts= element with something like this:
@@ -214,18 +216,36 @@ Typical use would be to populate an =&opts= element with something like this:
   comp:sequence &opts= { vagrant -h | comp:extract-opts } [ ... ]
 #+end_src
 
-*Note:* The regular expression used to extract the options can be specified with the =&regex= option, which should have three groups, which get mapped to short, long and description, respectively. The mapping from the regex capture groups to the options can also be changed by passing the =&regex-map= option to =comp:extract-opts=. Its default value is =[&short=1 &long=2 &desc=3]=, which results in the default mapping, but if you need a different arrangement, you can reconfigure it.
+The regular expression used to extract the options can be specified with the =&regex= option. Its default value is:
 
-*Example #8:* the =brew= completer shown before can be made to show package names in different styles (green when installing, red when uninstalling).
+#+begin_src elvish :noweb-ref opt-capture-regex
+    &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
+#+end_src
+
+The mapping of capture groups from the regex to option components is defined by the =&regex-map= option. Its default value (which also shows the available fields) is:
+
+#+begin_src elvish :noweb-ref opt-capture-map
+    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
+#+end_src
+
+At least one of =short= or =long= must be present in =regex-map=. The =arg-optional= and =arg-mandatory= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-mandatory= / =arg-optional= is set to =$true=.
+
+If =&fold= is =$true=, then the input is preprocessed to join option descriptions which span more than one line (the heuristic is not perfect and may not work in all cases, also for now it only joins one line after the option).
+
+*Example #8:* the =brew= completer shown before can be made to show package names in different styles (green when installing, red when uninstalling). Here we also show the use of =comp:extract-opts= with custom regex for capturing the options from the =brew= help messages:
 
 #+begin_src elvish
   brew-completions = [
     &install= (comp:sequence \
-      &opts= [ (brew install -h | take 1 | comp:extract-opts &regex='()--(\w[\w-]*)()') ] \
+      &opts= [(brew install -h | take 1 |
+          comp:extract-opts &regex='--(\w[\w-]*)(?:=(.*?)\])?' &regex-map=[&long=1 &arg-mandatory=2]
+      )]  \
       [ { brew search | comp:decorate &style=green } ... ]
     )
     &uninstall= (comp:sequence \
-      &opts= [ (brew uninstall -h | take 1 | comp:extract-opts &regex='()--(\w[\w-]*)()') ] \
+      &opts= [(brew uninstall -h | take 1 |
+          comp:extract-opts &regex='--(\w[\w-]*)' &regex-map=[&long=1]
+      )] \
       [ { brew list | comp:decorate &style=red } ... ]
     )
     &cat= (comp:sequence [{ brew search }])
@@ -292,27 +312,45 @@ We start by loading some basic modules we need.
 
 *** comp:extract-opts
 
-=comp:extract-opts= takes input from the pipeline and parses it using a regular expression with three groups. By default, group #1 should be the short option letter, #2 is the long option name, and #3 is the description, but this is configurable with the =&regex-map= option. At last one of short/long is mandatory, everything else is optional. Returns an option map with keys =short=, =long= and =desc=, depending on the available groups. Only produces an output if at least =short= or =long= has a value.
+=comp:extract-opts= takes input from the pipeline and parses it using a regular expression. The default regex contains 5 groups to parse the =short=, =long=, =arg-mandatory=, =arg-optional= and =desc=, but both the regex and the mapping can be configured using the =&regex= and =&regex-map= options. At last one of short/long is mandatory, everything else is optional. Returns an option map with all existing keys, depending on the available groups and the keys in =$regex-map=. Only produces an output if at least =short= or =long= has a value. The =arg-optional= and =arg-mandatory= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-mandatory= / =arg-optional= is set to =$true=.
 
-#+begin_src elvish
+If =&fold= is =$true=, then the input is preprocessed to join option descriptions which span more than one line (the heuristic is not perfect and may not work in all cases, also for now it only joins one line after the option).
+
+#+begin_src elvish :noweb yes
   fn extract-opts [@cmd
-    &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
-    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
+    <<opt-capture-regex>>
+    <<opt-capture-map>>
+    &fold=$false
   ]{
-    all | each [l]{
-    re:find $regex $l } | each [m]{
-      short long desc arg-optional arg-mandatory = $m[groups][$regex-map[short long desc arg-optional arg-mandatory]][text]
-      opt = [&]
-      if (not-eq $short '') { opt[short] = $short }
-      if (not-eq $long  '') { opt[long]  = $long  }
-      if (not-eq $desc  '') { opt[desc]  = $desc  }
-      if (not-eq $arg-optional '')  {
-        opt[arg-optional]  = (not-eq $arg-optional '')
-        opt[arg-desc]      = $arg-optional
+    -line = ''
+    capture = $all~
+    if $fold {
+      capture = { each [l]{
+          if (re:match '^\s+\w' $l) {
+            put $-line$l
+            -line = ''
+          } else {
+            put $-line
+            -line = $l
+          }
+        }
       }
-      if (not-eq $arg-mandatory '') {
-        opt[arg-mandatory] = (not-eq $arg-mandatory '')
-        opt[arg-desc]      = $arg-mandatory
+    }
+    $capture | each [l]{ re:find $regex $l } | each [m]{
+      g = $m[groups]
+      opt = [&]
+      keys $regex-map | each [k]{
+        if (has-key $g $regex-map[$k]) {
+          field = $g[$regex-map[$k]][text]
+          if (not-eq $field '') {
+            if (has-value [arg-optional arg-mandatory] $k) {
+              opt[$k] = $true
+              opt[arg-desc] = $field
+            } else {
+              opt[$k] = $field
+            }
+          }
+        }
       }
       if (or (has-key $opt short) (has-key $opt long)) {
         put $opt
@@ -370,16 +408,12 @@ The backend completion functions =comp:-expand-item=, =comp:-expand-sequence= an
   fn -expand-sequence [seq @cmd &opts=[]]{
 #+end_src
 
-We first preprocess the options. If =&opts= is provided, it has to be a list with one element for each command-line option. Elements that are maps are assumed to be in the final format (with keys =short=, =long= and =desc=) and used as-is (their structure is not checked). Elements which are strings are considered as long option names and converted to the appropriate data structure.
+We first preprocess the options. If =&opts= is provided, it has to be a completion item which expands to a list with one element per option. Elements that are maps are assumed to be in getopt format (with keys =short=, =long=, =desc=, =arg-mandatory=, =arg-optional= and =arg-desc=) and used as-is (their structure is not checked). Elements which are strings are considered as long option names and converted to the appropriate data structure.
 
 #+begin_src elvish
   final-opts = [(
       -expand-item $opts $@cmd | each [opt]{
         if (eq (kind-of $opt) map) {
-          if (has-key $opt arg-desc) {
-            if (not (has-key $opt desc)) { opt[desc] = '' }
-            opt[desc] = (joins ' ' ["arg: "$opt[arg-desc] - $opt[desc]])
-          }
           put $opt
         } else {
           put [&long= $opt]

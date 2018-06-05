@@ -27,21 +27,37 @@ fn files [arg &regex='' &dirs-only=$false]{
 fn extract-opts [@cmd
   &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
   &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
+  &fold=$false
 ]{
-  all | each [l]{
-  re:find $regex $l } | each [m]{
-    short long desc arg-optional arg-mandatory = $m[groups][$regex-map[short long desc arg-optional arg-mandatory]][text]
-    opt = [&]
-    if (not-eq $short '') { opt[short] = $short }
-    if (not-eq $long  '') { opt[long]  = $long  }
-    if (not-eq $desc  '') { opt[desc]  = $desc  }
-    if (not-eq $arg-optional '')  {
-      opt[arg-optional]  = (not-eq $arg-optional '')
-      opt[arg-desc]      = $arg-optional
+  -line = ''
+  capture = $all~
+  if $fold {
+    capture = { each [l]{
+        if (re:match '^\s+\w' $l) {
+          put $-line$l
+          -line = ''
+        } else {
+          put $-line
+          -line = $l
+        }
+      }
     }
-    if (not-eq $arg-mandatory '') {
-      opt[arg-mandatory] = (not-eq $arg-mandatory '')
-      opt[arg-desc]      = $arg-mandatory
+  }
+  $capture | each [l]{ re:find $regex $l } | each [m]{
+    g = $m[groups]
+    opt = [&]
+    keys $regex-map | each [k]{
+      if (has-key $g $regex-map[$k]) {
+        field = $g[$regex-map[$k]][text]
+        if (not-eq $field '') {
+          if (has-value [arg-optional arg-mandatory] $k) {
+            opt[$k] = $true
+            opt[arg-desc] = $field
+          } else {
+            opt[$k] = $field
+          }
+        }
+      }
     }
     if (or (has-key $opt short) (has-key $opt long)) {
       put $opt
@@ -79,10 +95,6 @@ fn -expand-sequence [seq @cmd &opts=[]]{
 final-opts = [(
     -expand-item $opts $@cmd | each [opt]{
       if (eq (kind-of $opt) map) {
-        if (has-key $opt arg-desc) {
-          if (not (has-key $opt desc)) { opt[desc] = '' }
-          opt[desc] = (joins ' ' ["arg: "$opt[arg-desc] - $opt[desc]])
-        }
         put $opt
       } else {
         put [&long= $opt]
