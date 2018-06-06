@@ -86,7 +86,7 @@ fn -expand-item [def @cmd]{
   } elif (eq $what 'list') {
     explode $def
   } else {
-    echo (edit:styled "comp:-expand-item: invalid item of type "$what": "(to-string $def) red) >/dev/tty
+    echo (styled "comp:-expand-item: invalid item of type "$what": "(to-string $def) red) >/dev/tty
   }
 }
 

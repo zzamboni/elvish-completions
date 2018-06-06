@@ -72,7 +72,7 @@ We store the output of =git:status= in a global variable to make it easier to ac
 
 ** Configuration variables
 
-The =$*-style= variables contains the style (as per =edit:styled=) to use for different completion components the completion menu. Set to =''= (an empty string) to show in the normal style.
+The =$*-style= variables contains the style (as per =styled=) to use for different completion components the completion menu. Set to =''= (an empty string) to show in the normal style.
 
 #+begin_src elvish :noweb yes
   <<git-completion-styles>>
