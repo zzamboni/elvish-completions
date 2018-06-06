@@ -27,6 +27,7 @@ In your =rc.elv=, load this module:
 
 Included completions:
 
+- =elvish= (completes command-line options and =.elv= files).
 - =use= (completes all modules in =~/.elvish/lib=). Example (the "lack module name" message is normal and part of Elvish's as-you-type compilation, it goes away when you add a module name):
   #+begin_example
     [~]─> use <Tab>
@@ -48,6 +49,7 @@ Included completions:
      github.com/zzamboni/elvish-completions/ssh       github.com/zzamboni/elvish-themes/chain
      github.com/zzamboni/elvish-completions/vcsh      private
   #+end_example
+- =epm= commands: completes installed packages for the appropriate commands.
 
 * Implementation
 :PROPERTIES:
@@ -87,4 +89,13 @@ Completers for the =epm= commands.
   edit:completion:arg-completer[epm:dest]      = $epm-completer-one
   edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
   edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
+#+end_src
+
+Completer for the =elvish= command.
+
+#+begin_src elvish
+  edit:completion:arg-completer[elvish] = (comp:sequence \
+    &opts= { elvish -help | comp:extract-opts &fold } \
+    [ [arg]{ comp:files $arg &regex='\.elv$' } ] \
+  )
 #+end_src

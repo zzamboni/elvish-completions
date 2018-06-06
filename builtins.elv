@@ -19,3 +19,8 @@ edit:completion:arg-completer[epm:metadata]  = $epm-completer-one
 edit:completion:arg-completer[epm:dest]      = $epm-completer-one
 edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
 edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
+
+edit:completion:arg-completer[elvish] = (comp:sequence \
+  &opts= { elvish -help | comp:extract-opts &fold } \
+  [ [arg]{ comp:files $arg &regex='\.elv$' } ] \
+)
