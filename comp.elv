@@ -18,14 +18,14 @@ fn empty { nop }
 
 fn files [arg &regex='' &dirs-only=$false]{
   put {$arg}*[match-hidden][nomatch-ok] | each [x]{
-    if (and (or (not $dirs-only) (-is-dir $x)) (or (eq $regex '') (re:match $regex $x))) {
+    if (or (-is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
       put $x
     }
   }
 }
 
 fn extract-opts [@cmd
-  &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
+  &regex='^\s*(?:-(\w),?\s*)?(?:--?([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
   &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
   &fold=$false
 ]{
