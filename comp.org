@@ -219,7 +219,7 @@ Typical use would be to populate an =&opts= element with something like this:
 The regular expression used to extract the options can be specified with the =&regex= option. Its default value is:
 
 #+begin_src elvish :noweb-ref opt-capture-regex
-    &regex='^\s*(?:-(\w),?\s*)?(?:--([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
+    &regex='^\s*(?:-(\w),?\s*)?(?:--?([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
 #+end_src
 
 The mapping of capture groups from the regex to option components is defined by the =&regex-map= option. Its default value (which also shows the available fields) is:
