@@ -9,6 +9,9 @@ This file is written in [[http://www.howardism.org/Technical/Emacs/literate-prog
 * Table of Contents                                            :TOC:noexport:
 - [[#usage][Usage]]
 - [[#implementation][Implementation]]
+  - [[#use][use]]
+  - [[#epm][epm]]
+  - [[#elvish][elvish]]
 
 * Usage
 
@@ -64,6 +67,8 @@ Load the completion framework and other libraries.
   use re
 #+end_src
 
+** use
+
 Completer for the =use= command, which includes all modules in =~/.elvish/lib/=.
 
 #+begin_src elvish
@@ -76,6 +81,8 @@ Completer for the =use= command, which includes all modules in =~/.elvish/lib/=.
     }]
   )
 #+end_src
+
+** epm
 
 Completers for the =epm= commands.
 
@@ -90,6 +97,8 @@ Completers for the =epm= commands.
   edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
   edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
 #+end_src
+
+** elvish
 
 Completer for the =elvish= command.
 
