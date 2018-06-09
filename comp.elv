@@ -17,9 +17,10 @@ fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
 fn empty { nop }
 
 fn files [arg &regex='' &dirs-only=$false]{
-  put {$arg}*[match-hidden][nomatch-ok] | each [x]{
+  edit:complete-filename $arg | each [c]{
+    x = $c[stem]
     if (or (-is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
-      put $x
+      put $c
     }
   }
 }
