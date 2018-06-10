@@ -7,6 +7,8 @@ completions = [&]
 
 status = [&]
 
+git-arg-completer = { }
+
 git-command = git
 
 modified-style  = yellow
@@ -82,9 +84,10 @@ fn init {
         completions[$alias] = (comp:sequence [])
       }
     }
-    edit:completion:arg-completer[git] = (comp:subcommands $completions \
+    git-arg-completer = (comp:subcommands $completions \
       &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
     )
+    edit:completion:arg-completer[git] = $git-arg-completer
 }
 
 init

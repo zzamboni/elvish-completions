@@ -13,6 +13,7 @@ Some original inspiration from [[ https://github.com/occivink/config/blob/master
   - [[#configuration-variables][Configuration variables]]
   - [[#utility-functions][Utility functions]]
   - [[#initialization-of-completion-definitions][Initialization of completion definitions]]
+- [[#test-suite][Test suite]]
 
 * Usage
 
@@ -74,6 +75,12 @@ We store the output of =git:status= in a global variable to make it easier to ac
 
 #+begin_src elvish
   status = [&]
+#+end_src
+
+Here we will store the completer function (for easier access and for testing).
+
+#+begin_src elvish
+  git-arg-completer = { }
 #+end_src
 
 ** Configuration variables
@@ -201,13 +208,35 @@ Next, we parse the defined aliases from the output of =git config --list=. We st
 We setup the completer by assigning the function to the corresponding element of =$edit:completion:arg-completer=.
 
 #+begin_src elvish :noweb-ref setup-completer :tangle no
-  edit:completion:arg-completer[git] = (comp:subcommands $completions \
+  git-arg-completer = (comp:subcommands $completions \
     &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
   )
+  edit:completion:arg-completer[git] = $git-arg-completer
 #+end_src
 
 We run =init= by default on load, although it can be re-run if you change any configuration variables (most notably =git:git-command=).
 
 #+begin_src elvish
-init
+  init
+#+end_src
+
+* Test suite
+:PROPERTIES:
+:header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) "_test.elv")
+:header-args: :mkdirp yes :comments no
+:END:
+
+#+begin_src elvish
+  use github.com/zzamboni/elvish-completions/git
+  use github.com/zzamboni/elvish-modules/test
+
+  cmds = ($git:git-arg-completer git '')
+
+  (test:set github.com/zzamboni/elvish-completions/git
+    (test:set "common top-level commands"
+      (test:check { has-value $cmds add })
+      (test:check { has-value $cmds checkout })
+      (test:check { has-value $cmds commit })
+    )
+  )
 #+end_src
