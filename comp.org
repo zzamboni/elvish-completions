@@ -48,7 +48,7 @@ From the file where you will define your completions, load this module:
   use github.com/zzamboni/elvish-completions/comp
 #+end_src
 
-The main entry points for this module are =comp:item=, =comp:sequence= and =comp:subcommands=. Each one receives a single argument containing a  "completion definition", which indicates how the completions will be produced. Each one receives a different kind of completion structure, and receives a corresponding completion function, which receives the current contents of the command line (as passed to the [[https://elvish.io/ref/edit.html#argument-completer][argument completer functions]]) and returns the appropriate completions. The function returned by the =comp:*= functions can be assigned directly to an element of =$edit:completion:arg-completer=. A simple example:
+The main entry points for this module are =comp:item=, =comp:sequence= and =comp:subcommands=. Each one receives a single argument containing a  "completion definition", which indicates how the completions will be produced. Each one receives a different kind of completion structure, and returns a corresponding completion function, which receives the current contents of the command line (as passed to the [[https://elvish.io/ref/edit.html#argument-completer][argument completer functions]]) and returns the appropriate completions. The function returned by the =comp:*= functions can be assigned directly to an element of =$edit:completion:arg-completer=. A simple example:
 
 #+begin_src elvish
   edit:completion:arg-completer[foo] = (comp:item [ bar baz ])
