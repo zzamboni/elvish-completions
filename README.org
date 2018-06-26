@@ -1,0 +1,5 @@
+#+title: Completions for Elvish
+#+author: Diego Zamboni
+#+email: diego@zzamboni.org
+
+#+include: "./comp.org::summary"
