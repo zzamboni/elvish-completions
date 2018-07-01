@@ -2,7 +2,8 @@
 #+AUTHOR: Diego Zamboni
 #+EMAIL:  diego@zzamboni.org
 
-This module implements completions for =ssh=, =scp= and =sftp=.
+#+name: module-summary
+Completions for =ssh=, =scp= and =sftp=.
 
 This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:ssh.elv][ssh.elv]] for the generated file.
 

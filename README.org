@@ -1,3 +1,46 @@
-* Completions for Elvish
-#+author: Diego Zamboni
-#+email: diego@zzamboni.org
+# Created 2018-07-01 Sun 23:15
+#+TITLE:
+#+AUTHOR: Zamboni Diego
+#+macro: module-summary (eval (org-export-string-as (concat "- [[file:" $1 ".org][" $1 "]] :: \n  #+include: " $1 ".org::module-summary\n") 'org t))
+#+export_file_name: README.org
+
+* zzamboni's completion library for Elvish
+
+This Elvish package contains various completions I have written for the [[https://elv.sh/][Elvish shell]].
+
+To install, use [[https://elvish.io/ref/epm.html][epm]]:
+
+#+begin_src elvish
+  use epm
+  epm:install github.com/zzamboni/elvish-completions
+#+end_src
+
+For each module you want to use, you need to add the following to your =rc.elv= file:
+
+#+begin_src elvish
+  use github.com/zzamboni/elvish-completions/<modulename>
+#+end_src
+
+See each module's page for detailed usage instructions.
+
+The following modules are included:
+
+- [[file:comp.org][comp]] ::
+     #+name: module-summary
+     A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. Used to implement most other modules in this repository.
+
+- [[file:builtins.org][builtins]] ::
+     #+name: module-summary
+     Completions for some of Elvish's built-in commands, including =use=, the =epm= module and =elvish= itself.
+
+- [[file:cd.org][cd]] ::
+     #+name: module-summary
+     Completes directory names for the =cd= command.
+
+- [[file:git.org][git]] ::
+     #+name: module-summary
+     Completions for =git=, including automatically-generated completions for both subcommands and command-line options.
+
+- [[file:ssh.org][ssh]] ::
+     #+name: module-summary
+     Completions for =ssh=, =scp= and =sftp=.

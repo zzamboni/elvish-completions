@@ -2,8 +2,8 @@
 #+author: Diego Zamboni
 #+email: diego@zzamboni.org
 
-#+name: summary
-A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. You can find some completers I have written with it in my [[https://github.com/zzamboni/elvish-completions][zzamboni/elvish-completions]] repository.
+#+name: module-summary
+A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. Used to implement most other modules in this repository.
 
 This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:comp.elv][comp.elv]] for the generated file.
 

@@ -1,0 +1,29 @@
+#+macro: module-summary (eval (org-export-string-as (concat "- [[file:" $1 ".org][" $1 "]] :: \n  #+include: " $1 ".org::module-summary\n") 'org t))
+#+EXPORT_FILE_NAME: README.org
+
+* zzamboni's completion library for Elvish
+
+This Elvish package contains various completions I have written for the [[https://elv.sh/][Elvish shell]].
+
+To install, use [[https://elvish.io/ref/epm.html][epm]]:
+
+#+begin_src elvish
+  use epm
+  epm:install github.com/zzamboni/elvish-completions
+#+end_src
+
+For each module you want to use, you need to add the following to your =rc.elv= file:
+
+#+begin_src elvish
+  use github.com/zzamboni/elvish-completions/<modulename>
+#+end_src
+
+See each module's page for detailed usage instructions.
+
+The following modules are included:
+
+{{{module-summary(comp)}}}
+{{{module-summary(builtins)}}}
+{{{module-summary(cd)}}}
+{{{module-summary(git)}}}
+{{{module-summary(ssh)}}}

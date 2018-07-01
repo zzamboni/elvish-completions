@@ -4,6 +4,9 @@
 #+title: Elvish completions for cd
 #+author: Diego Zamboni <diego@zzamboni.org>
 
+#+name: module-summary
+Completes directory names for the =cd= command.
+
 #+begin_src elvish
   use ./comp
 

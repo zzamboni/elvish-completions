@@ -2,7 +2,8 @@
 #+author: Diego Zamboni
 #+email: diego@zzamboni.org
 
-This module implements completions for =git=.
+#+name: module-summary
+Completions for =git=, including automatically-generated completions for both subcommands and command-line options.
 
 Some original inspiration from [[ https://github.com/occivink/config/blob/master/.elvish/rc.elv.][occivink's git completer]].
 
