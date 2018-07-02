@@ -1,4 +1,4 @@
-# Created 2018-07-01 Sun 23:15
+# Created 2018-07-02 Mon 09:17
 #+TITLE:
 #+AUTHOR: Zamboni Diego
 #+macro: module-summary (eval (org-export-string-as (concat "- [[file:" $1 ".org][" $1 "]] :: \n  #+include: " $1 ".org::module-summary\n") 'org t))
@@ -27,7 +27,7 @@ The following modules are included:
 
 - [[file:comp.org][comp]] ::
      #+name: module-summary
-     A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. Used to implement most other modules in this repository.
+     A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. Used to implement most other modules in this repository. For a getting-started tutorial, see http://zzamboni.org/post/using-and-writing-completions-in-elvish/.
 
 - [[file:builtins.org][builtins]] ::
      #+name: module-summary
