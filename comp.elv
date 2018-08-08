@@ -25,6 +25,10 @@ fn files [arg &regex='' &dirs-only=$false]{
   }
 }
 
+fn dirs [arg &regex='']{
+  files $arg &regex=$regex &dirs-only=$true
+}
+
 fn extract-opts [@cmd
   &regex='^\s*(?:-(\w),?\s*)?(?:--?([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
   &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]

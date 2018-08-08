@@ -18,7 +18,7 @@ This file is written in [[http://www.howardism.org/Technical/Emacs/literate-prog
   - [[#utility-functions-1][Utility functions]]
     - [[#compdecorate][comp:decorate]]
     - [[#compempty][comp:empty]]
-    - [[#compfiles][comp:files]]
+    - [[#compfiles-and-compdirs][comp:files and comp:dirs]]
     - [[#compextract-opts][comp:extract-opts]]
     - [[#comp-handler-arity][comp:-handler-arity]]
   - [[#completion-functions][Completion functions]]
@@ -297,9 +297,9 @@ We start by loading some basic modules we need.
   fn empty { nop }
 #+end_src
 
-*** comp:files
+*** comp:files and comp:dirs
 
-=comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&only-dirs= is =$true=, only directories are returned.
+=comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&dirs-only= is =$true=, only directories are returned.
 
 #+begin_src elvish
   fn files [arg &regex='' &dirs-only=$false]{
@@ -309,6 +309,14 @@ We start by loading some basic modules we need.
         put $c
       }
     }
+  }
+#+end_src
+
+=comp:dirs= is simply a convenience wrapper around =comp:files= which sets =&dirs-only= automatically.
+
+#+begin_src elvish
+  fn dirs [arg &regex='']{
+    files $arg &regex=$regex &dirs-only=$true
   }
 #+end_src
 
