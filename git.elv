@@ -65,7 +65,7 @@ git-completions = [
 
 fn init {
     completions = [&]
-    -run-git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
+    -run-git help -a --no-verbose | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
       seq = [ $comp:files~ ... ]
       if (has-key $git-completions $c) {
         seq = $git-completions[$c]

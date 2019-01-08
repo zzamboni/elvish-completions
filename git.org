@@ -180,7 +180,7 @@ In the =git:init= function we initialize the =$completions= map with the necessa
 Next , we fetch the list of valid git commands from the output of =git help -a=, and store the corresponding completion sequences in =$completions=. All of them are configured to produce  completions for their options, as extracted by the =-git-opts= function. Commands that have corresponding definitions in =$git-completions= get them, otherwise they get the generic filename completer.
 
 #+begin_src elvish :noweb-ref init-git-commands :tangle no
-  -run-git help -a | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
+  -run-git help -a --no-verbose | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
     seq = [ $comp:files~ ... ]
     if (has-key $git-completions $c) {
       seq = $git-completions[$c]
