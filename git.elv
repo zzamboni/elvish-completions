@@ -70,7 +70,7 @@ fn init {
       if (has-key $git-completions $c) {
         seq = $git-completions[$c]
       }
-      if (eq (kind-of $seq 'string')) {
+      if (eq (kind-of $seq) string) {
         completions[$c] = $seq
       } else {
         completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
