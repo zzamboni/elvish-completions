@@ -50,19 +50,20 @@ fn BRANCHES      [&all=$false]{
 fn REMOTES       { _ = ?(-run-git remote 2>/dev/null | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
 
 git-completions = [
-  &add=      [ [stem]{ MOD-UNTRACKED; comp:dirs $stem } ... ]
-  &stage=    add
-  &checkout= [ { MODIFIED; BRANCHES } ... ]
-  &mv=       [ [stem]{ TRACKED; comp:dirs $stem } ... ]
-  &rm=       [ [stem]{ TRACKED; comp:dirs $stem } ... ]
-  &diff=     [ { MODIFIED; BRANCHES  } ... ]
-  &push=     [ $REMOTES~ $BRANCHES~ ]
-  &pull=     [ $REMOTES~ { BRANCHES &all } ]
-  &merge=    [ $BRANCHES~ ... ]
-  &init=     [ [stem]{ put "."; comp:dirs $stem } ]
-  &branch=   [ $BRANCHES~ ... ]
-  &rebase=   [ { $BRANCHES~ &all } ... ]
-  &cherry=   [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
+  &add=           [ [stem]{ MOD-UNTRACKED; comp:dirs $stem } ... ]
+  &stage=         add
+  &checkout=      [ { MODIFIED; BRANCHES } ... ]
+  &mv=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
+  &rm=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
+  &diff=          [ { MODIFIED; BRANCHES  } ... ]
+  &push=          [ $REMOTES~ $BRANCHES~ ]
+  &pull=          [ $REMOTES~ { BRANCHES &all } ]
+  &merge=         [ $BRANCHES~ ... ]
+  &init=          [ [stem]{ put "."; comp:dirs $stem } ]
+  &branch=        [ $BRANCHES~ ... ]
+  &rebase=        [ { $BRANCHES~ &all } ... ]
+  &cherry=        [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
+  &cherry-pick=   [ { $BRANCHES~ &all } ... ]
 ]
 
 fn init {
