@@ -48,6 +48,8 @@ fn BRANCHES      [&all=$false]{
   comp:decorate &display-suffix=' (branch)' &style=$branch-style)
 }
 fn REMOTES       { _ = ?(-run-git remote 2>/dev/null | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
+fn STASHES       { _ = ?(-run-git stash list 2>/dev/null | each [l]{ put [(splits : $l)][0] } ) }
+
 
 git-completions = [
   &add=           [ [stem]{ MOD-UNTRACKED; comp:dirs $stem } ... ]
@@ -64,6 +66,28 @@ git-completions = [
   &rebase=        [ { $BRANCHES~ &all } ... ]
   &cherry=        [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
   &cherry-pick=   [ { $BRANCHES~ &all } ... ]
+  &stash=         [
+                    &list= (comp:sequence [])
+                    &clear= (comp:sequence [])
+                    &show= (comp:sequence [ $STASHES~ ])
+                    &drop= (comp:sequence &opts=[[&short=q &long=quiet]] [ $STASHES~ ])
+                    &pop=   (comp:sequence &opts=[[&short=q &long=quiet] [&long=index]] [ $STASHES~ ])
+                    &apply= pop
+                    &branch= (comp:sequence [ [] $STASHES~ ])
+                    &push= (comp:sequence [ $comp:files~ ... ] &opts=[
+                      [&short=p &long=patch]
+                      [&short=k &long=keep-index] [&long=no-keep-index]
+                      [&short=q &long=quiet]
+                      [&short=u &long=include-untracked]
+                      [&short=a &long=all]
+                      [&short=m &long=message &arg-mandatory &arg-required]
+                    ])
+                    &create= (comp:sequence [])
+                    &store= (comp:sequence [ $BRANCHES~ ] &opts=[
+                      [&short=m &long=message &arg-mandatory &arg-required]
+                      [&short=q &long=quiet]
+                    ])
+                  ]
 ]
 
 fn init {
@@ -75,6 +99,8 @@ fn init {
       }
       if (eq (kind-of $seq) string) {
         completions[$c] = $seq
+      } elif (eq (kind-of $seq) map) {
+        completions[$c] = (comp:subcommands $seq)
       } else {
         completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
       }
