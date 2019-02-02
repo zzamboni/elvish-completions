@@ -61,6 +61,7 @@ git-completions = [
   &merge=    [ $BRANCHES~ ... ]
   &init=     [ [stem]{ put "."; comp:dirs $stem } ]
   &branch=   [ $BRANCHES~ ... ]
+  &rebase=   [ { $BRANCHES~ &all } ... ]
 ]
 
 fn init {
