@@ -62,6 +62,7 @@ git-completions = [
   &init=     [ [stem]{ put "."; comp:dirs $stem } ]
   &branch=   [ $BRANCHES~ ... ]
   &rebase=   [ { $BRANCHES~ &all } ... ]
+  &cherry=   [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
 ]
 
 fn init {
