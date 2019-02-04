@@ -109,7 +109,7 @@ If the =&opts= option is passed to the =comp:sequence= function, it must contain
     - =short= for the short one-letter option;
     - =long= for the long-option string;
     - =desc= for a descriptive string which gets shown in the completion menu;
-    - =arg-mandatory= or =arg-optional=: either one but not both can be set to =$true= to indicate whether the option takes a mandatory or optional argument;
+    - =arg-required= or =arg-optional=: either one but not both can be set to =$true= to indicate whether the option takes a mandatory or optional argument;
     - =arg-completer= can be specified and contain a completion item as described in [[*Items][Items]], and which will be expanded to provide completions for that argument's values.
 
 Simple example of a completion data structure for option =-t= (long form =--type=), which has a mandatory argument which can be =elv=, =org= or =txt=:
@@ -118,7 +118,7 @@ Simple example of a completion data structure for option =-t= (long form =--type
   [ &short=t
     &long=type
     &desc="Type of file to show"
-    &arg-mandatory=$true
+    &arg-required=$true
     &arg-completer= [ elv org txt ]
   ]
 #+end_example
@@ -226,10 +226,10 @@ The regular expression used to extract the options can be specified with the =&r
 The mapping of capture groups from the regex to option components is defined by the =&regex-map= option. Its default value (which also shows the available fields) is:
 
 #+begin_src elvish :noweb-ref opt-capture-map
-    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
+    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-requested=4 &desc=5]
 #+end_src
 
-At least one of =short= or =long= must be present in =regex-map=. The =arg-optional= and =arg-mandatory= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-mandatory= / =arg-optional= is set to =$true=.
+At least one of =short= or =long= must be present in =regex-map=. The =arg-optional= and =arg-required= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-required= / =arg-optional= is set to =$true=.
 
 If =&fold= is =$true=, then the input is preprocessed to join option descriptions which span more than one line (the heuristic is not perfect and may not work in all cases, also for now it only joins one line after the option).
 
@@ -239,7 +239,7 @@ If =&fold= is =$true=, then the input is preprocessed to join option description
   brew-completions = [
     &install= (comp:sequence \
       &opts= [(brew install -h | take 1 |
-          comp:extract-opts &regex='--(\w[\w-]*)(?:=(.*?)\])?' &regex-map=[&long=1 &arg-mandatory=2]
+          comp:extract-opts &regex='--(\w[\w-]*)(?:=(.*?)\])?' &regex-map=[&long=1 &arg-required=2]
       )]  \
       [ { brew search | comp:decorate &style=green } ... ]
     )
@@ -322,7 +322,7 @@ We start by loading some basic modules we need.
 
 *** comp:extract-opts
 
-=comp:extract-opts= takes input from the pipeline and parses it using a regular expression. The default regex contains 5 groups to parse the =short=, =long=, =arg-mandatory=, =arg-optional= and =desc=, but both the regex and the mapping can be configured using the =&regex= and =&regex-map= options. At last one of short/long is mandatory, everything else is optional. Returns an option map with all existing keys, depending on the available groups and the keys in =$regex-map=. Only produces an output if at least =short= or =long= has a value. The =arg-optional= and =arg-mandatory= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-mandatory= / =arg-optional= is set to =$true=.
+=comp:extract-opts= takes input from the pipeline and parses it using a regular expression. The default regex contains 5 groups to parse the =short=, =long=, =arg-required=, =arg-optional= and =desc=, but both the regex and the mapping can be configured using the =&regex= and =&regex-map= options. At last one of short/long is mandatory, everything else is optional. Returns an option map with all existing keys, depending on the available groups and the keys in =$regex-map=. Only produces an output if at least =short= or =long= has a value. The =arg-optional= and =arg-required= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-required= / =arg-optional= is set to =$true=.
 
 If =&fold= is =$true=, then the input is preprocessed to join option descriptions which span more than one line (the heuristic is not perfect and may not work in all cases, also for now it only joins one line after the option).
 
@@ -353,7 +353,7 @@ If =&fold= is =$true=, then the input is preprocessed to join option description
         if (has-key $g $regex-map[$k]) {
           field = $g[$regex-map[$k]][text]
           if (not-eq $field '') {
-            if (has-value [arg-optional arg-mandatory] $k) {
+            if (has-value [arg-optional arg-required] $k) {
               opt[$k] = $true
               opt[arg-desc] = $field
             } else {
@@ -418,7 +418,7 @@ The backend completion functions =comp:-expand-item=, =comp:-expand-sequence= an
   fn -expand-sequence [seq @cmd &opts=[]]{
 #+end_src
 
-We first preprocess the options. If =&opts= is provided, it has to be a completion item which expands to a list with one element per option. Elements that are maps are assumed to be in getopt format (with keys =short=, =long=, =desc=, =arg-mandatory=, =arg-optional= and =arg-desc=) and used as-is (their structure is not checked). Elements which are strings are considered as long option names and converted to the appropriate data structure.
+We first preprocess the options. If =&opts= is provided, it has to be a completion item which expands to a list with one element per option. Elements that are maps are assumed to be in getopt format (with keys =short=, =long=, =desc=, =arg-required=, =arg-optional= and =arg-desc=) and used as-is (their structure is not checked). Elements which are strings are considered as long option names and converted to the appropriate data structure.
 
 #+begin_src elvish
   final-opts = [(

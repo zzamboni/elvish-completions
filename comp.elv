@@ -31,7 +31,7 @@ fn dirs [arg &regex='']{
 
 fn extract-opts [@cmd
   &regex='^\s*(?:-(\w),?\s*)?(?:--?([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
-  &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-mandatory=4 &desc=5]
+  &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-required=4 &desc=5]
   &fold=$false
 ]{
   -line = ''
@@ -55,7 +55,7 @@ fn extract-opts [@cmd
       if (has-key $g $regex-map[$k]) {
         field = $g[$regex-map[$k]][text]
         if (not-eq $field '') {
-          if (has-value [arg-optional arg-mandatory] $k) {
+          if (has-value [arg-optional arg-required] $k) {
             opt[$k] = $true
             opt[arg-desc] = $field
           } else {
