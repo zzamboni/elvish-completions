@@ -420,10 +420,15 @@ The backend completion functions =comp:-expand-item=, =comp:-expand-sequence= an
 
 We first preprocess the options. If =&opts= is provided, it has to be a completion item which expands to a list with one element per option. Elements that are maps are assumed to be in getopt format (with keys =short=, =long=, =desc=, =arg-required=, =arg-optional= and =arg-desc=) and used as-is (their structure is not checked). Elements which are strings are considered as long option names and converted to the appropriate data structure.
 
+Because =edit:complete-getopt= support option argument completion with key =completer=. So if option structure has an =arg-completer= key, then it is expanded as an completion item and offers as a completer.
+
 #+begin_src elvish
   final-opts = [(
       -expand-item $opts $@cmd | each [opt]{
         if (eq (kind-of $opt) map) {
+          if (has-key $opt arg-completer) {
+            opt[completer] = [_]{ -expand-item $opt[arg-completer] $@cmd }
+          }
           put $opt
         } else {
           put [&long= $opt]
@@ -431,31 +436,6 @@ We first preprocess the options. If =&opts= is provided, it has to be a completi
       }
   )]
 #+end_src
-
-To allow specifying completers for option arguments, we check if the previous component of the command line is an existing option. If so, and if the option structure has an =arg-completer= key, then it is expanded as a completion item and offered as completions. If the option definition has the =arg-required= key, then no other completions are offered, otherwise the code falls through to the argument handlers, which means the completions for the first argument handler would also be produced.
-
-#+begin_src elvish
-  fn -has-and-is [def opt]{
-    or (and (has-key $def short) (eq '-'$def[short] $opt)) (and (has-key $def long) (eq '--'$def[long] $opt))
-  }
-
-  if (>= (count $cmd) 3) {
-    prev-opt = [&]
-    prev-word = $cmd[-2]
-    each [o]{
-      if (-has-and-is $o $prev-word) {
-        prev-opt = $o
-      }
-    } $final-opts
-    if (and (not-eq $prev-opt [&]) (has-key $prev-opt arg-completer)) {
-      -expand-item $prev-opt[arg-completer] $@cmd
-      if (and (has-key $prev-opt arg-required) $prev-opt[arg-required]) {
-        return
-      }
-    }
-  }
-#+end_src
-
 
 We also preprocess the handlers. =edit:complete-getopt= expects each handler to receive only one argument (the current word in the command line), but =comp= allows handlers to receive no arguments, one argument (the current element of the command line) or multiple arguments (the whole command line), so we need to normalize them. Happily, Elvish's functional nature makes this easy by checking the arity of each handler and, if necessary, wrapping them in one-argument functions, but passing them the information they expect. We also wrap items which are arrays into corresponding functions. As a special case, the string ='...'= is also passed, as it is allowed by =edit:complete-getopt= to indicate that the last element needs to be repeated for future elements. Any other handlers are ignored.
 
