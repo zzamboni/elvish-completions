@@ -16,6 +16,7 @@ untracked-style = red
 tracked-style   = ''
 branch-style    = blue
 remote-style    = cyan
+unmerged-style  = magenta
 
 fn -run-git [@rest]{
   gitcmds = [$git-command]
@@ -39,6 +40,7 @@ fn -git-opts [@cmd]{
 
 fn MODIFIED      { explode $status[local-modified] | comp:decorate &style=$modified-style }
 fn UNTRACKED     { explode $status[untracked] | comp:decorate &style=$untracked-style }
+fn UNMERGED      { explode $status[unmerged] | comp:decorate &style=$unmerged-style }
 fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
 fn TRACKED       { _ = ?(-run-git ls-files 2>/dev/null) | comp:decorate &style=$tracked-style }
 fn BRANCHES      [&all=$false]{
@@ -52,7 +54,7 @@ fn STASHES       { _ = ?(-run-git stash list 2>/dev/null | each [l]{ put [(split
 
 
 git-completions = [
-  &add=           [ [stem]{ MOD-UNTRACKED; comp:dirs $stem } ... ]
+  &add=           [ [stem]{ MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]
   &stage=         add
   &checkout=      [ { MODIFIED; BRANCHES } ... ]
   &mv=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
