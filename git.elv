@@ -80,11 +80,11 @@ git-completions = [
                       [&short=q &long=quiet]
                       [&short=u &long=include-untracked]
                       [&short=a &long=all]
-                      [&short=m &long=message &arg-mandatory &arg-required]
+                      [&short=m &long=message &arg-required]
                     ])
                     &create= (comp:sequence [])
                     &store= (comp:sequence [ $BRANCHES~ ] &opts=[
-                      [&short=m &long=message &arg-mandatory &arg-required]
+                      [&short=m &long=message &arg-required]
                       [&short=q &long=quiet]
                     ])
                   ]
