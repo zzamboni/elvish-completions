@@ -108,12 +108,21 @@ We store in =-ssh-options= all the possible configuration options, by parsing th
   }
 #+end_src
 
-The =$ssh-opts= array stores the definitions of command-line options. For now we only complete =-o=, including completions for its argument, generated with =-gen-ssh-options= defined above.
+The =$ssh-opts= array stores the definitions of command-line options. For now we only complete:
+
+  - =-o= (including completions for its argument) generated with =-gen-ssh-options= defined above
+  - =-i/--inventory= generated with =comp:files= defined in =comp.elv=
+
 #+begin_src elvish
   ssh-opts = [
     [ &short= o
       &arg-required= $true
       &arg-completer= $-gen-ssh-options~
+    ]
+    [ &short= i
+      &long= inventory
+      &arg-required= $true
+      &arg-completer= $comp:files~
     ]
   ]
 #+end_src
