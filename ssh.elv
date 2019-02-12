@@ -32,6 +32,11 @@ ssh-opts = [
     &arg-required= $true
     &arg-completer= $-gen-ssh-options~
   ]
+  [ &short= i
+    &long= inventory
+    &arg-required= $true
+    &arg-completer= $comp:files~
+  ]
 ]
 
 fn -ssh-host-completions [arg &suffix='']{
