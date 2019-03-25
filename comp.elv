@@ -58,6 +58,7 @@ fn extract-opts [@cmd
           if (has-value [arg-optional arg-required] $k) {
             opt[$k] = $true
             opt[arg-desc] = $field
+            opt[completer] = $files~
           } else {
             opt[$k] = $field
           }
