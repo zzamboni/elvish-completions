@@ -226,10 +226,10 @@ The regular expression used to extract the options can be specified with the =&r
 The mapping of capture groups from the regex to option components is defined by the =&regex-map= option. Its default value (which also shows the available fields) is:
 
 #+begin_src elvish :noweb-ref opt-capture-map
-    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-requested=4 &desc=5]
+    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-required=4 &desc=5]
 #+end_src
 
-At least one of =short= or =long= must be present in =regex-map=. The =arg-optional= and =arg-required= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-required= / =arg-optional= is set to =$true=.
+At least one of =short= or =long= must be present in =regex-map=. The =arg-optional= and =arg-required= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-required= / =arg-optional= is set to =$true=. Also =completer-= is set to =comp:files= by default.
 
 If =&fold= is =$true=, then the input is preprocessed to join option descriptions which span more than one line (the heuristic is not perfect and may not work in all cases, also for now it only joins one line after the option).
 
@@ -356,6 +356,7 @@ If =&fold= is =$true=, then the input is preprocessed to join option description
             if (has-value [arg-optional arg-required] $k) {
               opt[$k] = $true
               opt[arg-desc] = $field
+              opt[completer] = $files~
             } else {
               opt[$k] = $field
             }
