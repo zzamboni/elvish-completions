@@ -6,7 +6,7 @@ config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
 fn -ssh-hosts {
   hosts = [&]
   explode $config-files | each [file]{
-    _ = ?(cat $file 2>/dev/null) | eawk [_ @f]{
+    _ = ?(cat $file 2>&-) | eawk [_ @f]{
       if (re:match '^(?i)host$' $f[0]) {
         explode $f[1:] | each [p]{
           if (not (re:match '[*?!]' $p)) {
@@ -19,7 +19,7 @@ fn -ssh-hosts {
 fn -gen-ssh-options {
   if (eq $-ssh-options []) {
     -ssh-options = [(
-        _ = ?(cat (man -w ssh_config 2>/dev/null)) |
+        _ = ?(cat (man -w ssh_config 2>&-)) |
         eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } } |
         comp:decorate &suffix='='
     )]

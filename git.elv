@@ -42,15 +42,15 @@ fn MODIFIED      { explode $status[local-modified] | comp:decorate &style=$modif
 fn UNTRACKED     { explode $status[untracked] | comp:decorate &style=$untracked-style }
 fn UNMERGED      { explode $status[unmerged] | comp:decorate &style=$unmerged-style }
 fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
-fn TRACKED       { _ = ?(-run-git ls-files 2>/dev/null) | comp:decorate &style=$tracked-style }
+fn TRACKED       { _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
 fn BRANCHES      [&all=$false]{
   -allarg = []
   if $all { -allarg = ['--all'] }
-  _ = ?(-run-git branch --list (explode $-allarg) --format '%(refname:short)' 2>/dev/null |
+  _ = ?(-run-git branch --list (explode $-allarg) --format '%(refname:short)' 2>&- |
   comp:decorate &display-suffix=' (branch)' &style=$branch-style)
 }
-fn REMOTES       { _ = ?(-run-git remote 2>/dev/null | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
-fn STASHES       { _ = ?(-run-git stash list 2>/dev/null | each [l]{ put [(splits : $l)][0] } ) }
+fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
+fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(splits : $l)][0] } ) }
 
 
 git-completions = [
