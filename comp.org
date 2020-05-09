@@ -196,11 +196,11 @@ Finally, completion sequences can be aggregated into /subcommand structures/ tog
 
 #+begin_src elvish
 > comp:decorate &suffix=":" foo bar
-▶ (edit:complex-candidate foo &code-suffix=: &display-suffix=: &style='')
-▶ (edit:complex-candidate bar &code-suffix=: &display-suffix=: &style='')
+▶ (edit:complex-candidate foo &code-suffix=: &display-suffix=: )
+▶ (edit:complex-candidate bar &code-suffix=: &display-suffix=: )
 > put foo bar | comp:decorate &style="red"
-▶ (edit:complex-candidate foo &code-suffix='' &display-suffix='' &style=31)
-▶ (edit:complex-candidate bar &code-suffix='' &display-suffix='' &style=31)
+▶ (edit:complex-candidate foo &code-suffix='' &display-suffix='')
+▶ (edit:complex-candidate bar &code-suffix='' &display-suffix='')
 #+end_src
 
 =comp:extract-opts= takes input from the pipeline and extracts command-line option data structures from its output. By default it understand the following common formats:
@@ -276,6 +276,7 @@ We start by loading some basic modules we need.
 
 #+begin_src elvish
   fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
+    # &style is currently ignored because it is not supported by Elvish
     if (eq (count $input) 0) {
       input = [(all)]
     }
@@ -284,7 +285,7 @@ We start by loading some basic modules we need.
       code-suffix = $suffix
     }
     each [k]{
-      edit:complex-candidate &code-suffix=$code-suffix &display-suffix=$display-suffix &style=$style $k
+      edit:complex-candidate &code-suffix=$code-suffix &display-suffix=$display-suffix $k
     } $input
   }
 #+end_src
