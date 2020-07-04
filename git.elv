@@ -52,7 +52,6 @@ fn BRANCHES      [&all=$false]{
 fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
 fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(splits : $l)][0] } ) }
 
-
 git-completions = [
   &add=           [ [stem]{ MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]
   &stage=         add
