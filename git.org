@@ -31,6 +31,8 @@ In your =rc.elv=, load this module:
   use github.com/zzamboni/elvish-completions/git
 #+end_src
 
+*Note:* This package depends on [[https://github.com/muesli/elvish-libs][@muesli's git library]]. If you use =epm= as described above, this package will be installed automatically, but if you clone this repository by hand, you need to install it by hand.
+
 Now you can type =git<space>=, press ~Tab~ and see the corresponding completions. All =git= commands are automatically completed with their options (automatically extracted from their help messages). Some commands get more specific completions, including =add=, =push=, =checkout=, =diff= and a few others. Git aliases are automatically detected as well. Aliases which point to a single =git= command are automatically completed like the original command.
 
 Several components are colorized, you can configure the styles by setting these variables (default values shown):
