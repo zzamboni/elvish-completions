@@ -1,5 +1,6 @@
 use ./comp
 use re
+use str
 use github.com/muesli/elvish-libs/git
 use github.com/zzamboni/elvish-modules/util
 
@@ -21,13 +22,13 @@ unmerged-style  = magenta
 fn -run-git [@rest]{
   gitcmds = [$git-command]
   if (eq (kind-of $git-command) string) {
-    gitcmds = [(splits " " $git-command)]
+    gitcmds = [(re:split " " $git-command)]
   }
   cmd = $gitcmds[0]
   if (eq (kind-of $cmd) string) {
     cmd = (external $cmd)
   }
-  $cmd (explode $gitcmds[1:]) $@rest
+  $cmd (all $gitcmds[1:]) $@rest
 }
 
 fn -git-opts [@cmd]{
@@ -38,19 +39,19 @@ fn -git-opts [@cmd]{
   }
 }
 
-fn MODIFIED      { explode $status[local-modified] | comp:decorate &style=$modified-style }
-fn UNTRACKED     { explode $status[untracked] | comp:decorate &style=$untracked-style }
-fn UNMERGED      { explode $status[unmerged] | comp:decorate &style=$unmerged-style }
+fn MODIFIED      { all $status[local-modified] | comp:decorate &style=$modified-style }
+fn UNTRACKED     { all $status[untracked] | comp:decorate &style=$untracked-style }
+fn UNMERGED      { all $status[unmerged] | comp:decorate &style=$unmerged-style }
 fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
 fn TRACKED       { _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
 fn BRANCHES      [&all=$false]{
   -allarg = []
   if $all { -allarg = ['--all'] }
-  _ = ?(-run-git branch --list (explode $-allarg) --format '%(refname:short)' 2>&- |
+  _ = ?(-run-git branch --list (all $-allarg) --format '%(refname:short)' 2>&- |
   comp:decorate &display-suffix=' (branch)' &style=$branch-style)
 }
 fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
-fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(splits : $l)][0] } ) }
+fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(re:split : $l)][0] } ) }
 
 git-completions = [
   &add=           [ [stem]{ MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]

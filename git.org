@@ -65,6 +65,7 @@ We first load a number of libraries, including =comp=, the Elvish completion fra
 #+begin_src elvish
   use ./comp
   use re
+  use str
   use github.com/muesli/elvish-libs/git
   use github.com/zzamboni/elvish-modules/util
 #+end_src
@@ -111,13 +112,13 @@ The =-run-git= function executes a git-like command, with the given arguments.  
   fn -run-git [@rest]{
     gitcmds = [$git-command]
     if (eq (kind-of $git-command) string) {
-      gitcmds = [(splits " " $git-command)]
+      gitcmds = [(re:split " " $git-command)]
     }
     cmd = $gitcmds[0]
     if (eq (kind-of $cmd) string) {
       cmd = (external $cmd)
     }
-    $cmd (explode $gitcmds[1:]) $@rest
+    $cmd (all $gitcmds[1:]) $@rest
   }
 #+end_src
 
@@ -136,19 +137,19 @@ The =-git-opts= function receives an optional git command, runs =git [command] -
 We define the functions that return different possible values used in the completions. Some of these functions assume that =$status= contains already the output from =git:status=, which gets executed as the pre-hook of the git completer function below.
 
 #+begin_src elvish
-  fn MODIFIED      { explode $status[local-modified] | comp:decorate &style=$modified-style }
-  fn UNTRACKED     { explode $status[untracked] | comp:decorate &style=$untracked-style }
-  fn UNMERGED      { explode $status[unmerged] | comp:decorate &style=$unmerged-style }
+  fn MODIFIED      { all $status[local-modified] | comp:decorate &style=$modified-style }
+  fn UNTRACKED     { all $status[untracked] | comp:decorate &style=$untracked-style }
+  fn UNMERGED      { all $status[unmerged] | comp:decorate &style=$unmerged-style }
   fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
   fn TRACKED       { _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
   fn BRANCHES      [&all=$false]{
     -allarg = []
     if $all { -allarg = ['--all'] }
-    _ = ?(-run-git branch --list (explode $-allarg) --format '%(refname:short)' 2>&- |
+    _ = ?(-run-git branch --list (all $-allarg) --format '%(refname:short)' 2>&- |
     comp:decorate &display-suffix=' (branch)' &style=$branch-style)
   }
   fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
-  fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(splits : $l)][0] } ) }
+  fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(re:split : $l)][0] } ) }
 #+end_src
 
 ** Initialization of completion definitions

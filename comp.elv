@@ -91,7 +91,7 @@ fn -expand-item [def @cmd]{
       &other-args= { put '<completion-fn-arity-error>' }
     ][(-handler-arity $def)]
   } elif (eq $what 'list') {
-    explode $def
+    all $def
   } else {
     echo (styled "comp:-expand-item: invalid item of type "$what": "(to-string $def) red) >/dev/tty
   }
@@ -113,7 +113,7 @@ final-opts = [(
 )]
 
 final-handlers = [(
-    explode $seq | each [f]{
+    all $seq | each [f]{
       if (eq (kind-of $f) 'fn') {
         put [
           &no-args=  [_]{ $f }
@@ -122,7 +122,7 @@ final-handlers = [(
           &other-args= [_]{ put '<completion-fn-arity-error>' }
         ][(-handler-arity $f)]
       } elif (eq (kind-of $f) 'list') {
-        put [_]{ explode $f }
+        put [_]{ all $f }
       } elif (and (eq (kind-of $f) 'string') (eq $f '...')) {
         put $f
       }
@@ -146,7 +146,7 @@ if (and (not-eq $kw []) (not-eq $kw[1] (- $n 1))) {
     cmd[$sc-pos] = $def[$sc]
     -expand-subcommands &opts=$opts $def $@cmd
   } else {
-    $def[$sc] (explode $cmd[{$sc-pos}:])
+    $def[$sc] (all $cmd[{$sc-pos}:])
   }
 
 } else {

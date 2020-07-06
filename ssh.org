@@ -81,10 +81,10 @@ The =-ssh-hosts= function extracts all hostnames from the files listed in =$conf
 #+begin_src elvish
   fn -ssh-hosts {
     hosts = [&]
-    explode $config-files | each [file]{
+    all $config-files | each [file]{
       _ = ?(cat $file 2>&-) | eawk [_ @f]{
         if (re:match '^(?i)host$' $f[0]) {
-          explode $f[1:] | each [p]{
+          all $f[1:] | each [p]{
             if (not (re:match '[*?!]' $p)) {
               hosts[$p] = $true
     }}}}}
@@ -104,7 +104,7 @@ We store in =-ssh-options= all the possible configuration options, by parsing th
           comp:decorate &suffix='='
       )]
     }
-    explode $-ssh-options
+    all $-ssh-options
   }
 #+end_src
 
