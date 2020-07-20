@@ -11,7 +11,7 @@ fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
     code-suffix = $suffix
   }
   each [k]{
-    edit:complex-candidate &code-suffix=$code-suffix &display-suffix=$display-suffix $k
+    edit:complex-candidate &code-suffix=$code-suffix &display=$k$display-suffix $k
   } $input
 }
 
