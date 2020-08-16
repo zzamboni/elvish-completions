@@ -104,8 +104,8 @@ Completers for the =epm= commands.
 Completer for the =elvish= command.
 
 #+begin_src elvish
-  edit:completion:arg-completer[elvish] = (comp:sequence \
-    &opts= { elvish -help | comp:extract-opts &fold } \
-    [ [arg]{ comp:files $arg &regex='\.elv$' } ] \
+  edit:completion:arg-completer[elvish] = (comp:sequence ^
+    &opts= { elvish -help | comp:extract-opts &fold } ^
+    [ [arg]{ comp:files $arg &regex='\.elv$' } ] ^
   )
 #+end_src

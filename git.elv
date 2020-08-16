@@ -115,7 +115,7 @@ fn init {
         completions[$alias] = (comp:sequence [])
       }
     }
-    git-arg-completer = (comp:subcommands $completions \
+    git-arg-completer = (comp:subcommands $completions ^
       &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
     )
     edit:completion:arg-completer[git] = $git-arg-completer
