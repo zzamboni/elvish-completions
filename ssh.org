@@ -1,13 +1,13 @@
-#+TITLE:  Elvish completions for ssh
-#+AUTHOR: Diego Zamboni
-#+EMAIL:  diego@zzamboni.org
+#+title: Elvish completions for ssh
+#+author: Diego Zamboni
+#+email: diego@zzamboni.org
 
 #+name: module-summary
 Completions for =ssh=, =scp= and =sftp=.
 
 This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:ssh.elv][ssh.elv]] for the generated file.
 
-* Table of Contents                                            :TOC:noexport:
+* Table of Contents :TOC:noexport:
 - [[#usage][Usage]]
 - [[#implementation][Implementation]]
   - [[#libraries-and-global-variables][Libraries and global variables]]
@@ -37,20 +37,20 @@ Hosts for the completions will be read from the files listed in the =$config-fil
 All hosts listed in =Host= sections of the config files will be provided for completion. Patterns including any metacharacters (=*=, =?= and =!=) will not be shown.
 
 #+begin_example
-[~]─> ssh <tab>
- COMPLETING argument
- host1                host2                  host3
+  [~]─> ssh <tab>
+   COMPLETING argument
+   host1                host2                  host3
 #+end_example
 
 Completions are also provided for config options. If you type =-o<space>=  and press ~Tab~, a list of valid configuration options will be provided. The valid configuration options are automatically extracted from the =ssh_config= man page, if it's available.
 
 #+begin_example
-[~]─> ssh -o <tab>
- COMPLETING argument _
- AddKeysToAgent=                   ControlPath=                HostKeyAlias=                  NoHostAuthenticationForLocalhost=  ServerAliveCountMax=
- AddressFamily=                    ControlPersist=             HostName=                      NumberOfPasswordPrompts=           ServerAliveInterval=
- BatchMode=                        DynamicForward=             HostbasedAuthentication=       PKCS11Provider=                    StreamLocalBindMask=
- ...
+  [~]─> ssh -o <tab>
+   COMPLETING argument _
+   AddKeysToAgent=                   ControlPath=                HostKeyAlias=                  NoHostAuthenticationForLocalhost=  ServerAliveCountMax=
+   AddressFamily=                    ControlPersist=             HostName=                      NumberOfPasswordPrompts=           ServerAliveInterval=
+   BatchMode=                        DynamicForward=             HostbasedAuthentication=       PKCS11Provider=                    StreamLocalBindMask=
+   ...
 #+end_example
 
 * Implementation
@@ -66,6 +66,7 @@ We first load a number of libraries, including =comp=, the Elvish [[file:comp.or
 #+begin_src elvish
   use ./comp
   use re
+  use str
 #+end_src
 
 List of config files from which to extract hostnames.
@@ -110,8 +111,8 @@ We store in =-ssh-options= all the possible configuration options, by parsing th
 
 The =$ssh-opts= array stores the definitions of command-line options. For now we only complete:
 
-  - =-o= (including completions for its argument) generated with =-gen-ssh-options= defined above
-  - =-i/--inventory= generated with =comp:files= defined in =comp.elv=
+- =-o= (including completions for its argument) generated with =-gen-ssh-options= defined above
+- =-i/--inventory= generated with =comp:files= defined in =comp.elv=
 
 #+begin_src elvish
   ssh-opts = [
@@ -131,7 +132,7 @@ The =$ssh-opts= array stores the definitions of command-line options. For now we
 
 #+begin_src elvish
   fn -ssh-host-completions [arg &suffix='']{
-    user-given = (joins '' [(re:find '^(.*@)' $arg)[groups][1][text]])
+    user-given = (str:join '' [(re:find '^(.*@)' $arg)[groups][1][text]])
     -ssh-hosts | each [host]{ put $user-given$host } | comp:decorate &suffix=$suffix
   }
 #+end_src
