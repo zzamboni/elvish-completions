@@ -28,7 +28,7 @@ fn -run-git [@rest]{
   if (eq (kind-of $cmd) string) {
     cmd = (external $cmd)
   }
-  $cmd (all $gitcmds[1:]) $@rest
+  $cmd (all $gitcmds[1..]) $@rest
 }
 
 fn -git-opts [@cmd]{
@@ -115,7 +115,7 @@ fn init {
         completions[$alias] = (comp:sequence [])
       }
     }
-    git-arg-completer = (comp:subcommands $completions \
+    git-arg-completer = (comp:subcommands $completions ^
       &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
     )
     edit:completion:arg-completer[git] = $git-arg-completer

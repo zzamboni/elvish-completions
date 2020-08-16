@@ -118,7 +118,7 @@ The =-run-git= function executes a git-like command, with the given arguments.  
     if (eq (kind-of $cmd) string) {
       cmd = (external $cmd)
     }
-    $cmd (all $gitcmds[1:]) $@rest
+    $cmd (all $gitcmds[1..]) $@rest
   }
 #+end_src
 
@@ -242,7 +242,7 @@ Next, we parse the defined aliases from the output of =git config --list=. We st
 We setup the completer by assigning the function to the corresponding element of =$edit:completion:arg-completer=.
 
 #+begin_src elvish :noweb-ref setup-completer :tangle no
-  git-arg-completer = (comp:subcommands $completions \
+  git-arg-completer = (comp:subcommands $completions ^
     &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
   )
   edit:completion:arg-completer[git] = $git-arg-completer

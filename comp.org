@@ -465,7 +465,7 @@ We also preprocess the handlers. =edit:complete-getopt= expects each handler to 
 Finally, we call =edit:complete-getopt= with the corresponding data structures. It expects the current line /without/ the initial command, so we remove that as well.
 
 #+begin_src elvish
-    edit:complete-getopt $cmd[1:] $final-opts $final-handlers
+    edit:complete-getopt $cmd[1..] $final-opts $final-handlers
   }
 #+end_src
 
@@ -496,7 +496,7 @@ The algorithm for =comp:-expand-subcommands= is a bit counterintuitive, this is 
           cmd[$sc-pos] = $def[$sc]
           -expand-subcommands &opts=$opts $def $@cmd
         } else {
-          $def[$sc] (all $cmd[{$sc-pos}:])
+          $def[$sc] (all $cmd[{$sc-pos}..])
         }
   #+end_src
 

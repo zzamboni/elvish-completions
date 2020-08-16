@@ -17,7 +17,7 @@ fn vcsh-completer [cmd @rest]{
     cmds = [(vcsh 2>&1 | grep '^   [a-z-]' | grep -v ':$' | awk '{print $1}')]
     put $@repos $@cmds
   } elif (and (> $n 1) (has-value $repos $rest[0])) {
-    put (git:git-completer $cmd" "$rest[0] (all $rest[1:]))
+    put (git:git-completer $cmd" "$rest[0] (all $rest[1..]))
   } elif (eq $n 2) {
     # Subcommand- or option-specific completions
     if (eq $rest[0] "-c") {
@@ -33,7 +33,7 @@ fn vcsh-completer [cmd @rest]{
     # For more than two arguments, we recurse, removing any options that have been typed already
     # Not perfect but it allows completion to work properly after "vcsh status --terse", for example,
     # without too much repetition
-    put (-all-except [(vcsh-completer $cmd (all $rest[0:(- $n 1)]))] $rest[0:(- $n 1)])
+    put (-all-except [(vcsh-completer $cmd (all $rest[0..(- $n 1)]))] $rest[0..(- $n 1)])
   }
 }
 

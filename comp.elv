@@ -129,7 +129,7 @@ final-handlers = [(
     }
 )]
 
-edit:complete-getopt $cmd[1:] $final-opts $final-handlers
+edit:complete-getopt $cmd[1..] $final-opts $final-handlers
 }
 
 fn -expand-subcommands [def @cmd &opts=[]]{
@@ -146,7 +146,7 @@ if (and (not-eq $kw []) (not-eq $kw[1] (- $n 1))) {
     cmd[$sc-pos] = $def[$sc]
     -expand-subcommands &opts=$opts $def $@cmd
   } else {
-    $def[$sc] (all $cmd[{$sc-pos}:])
+    $def[$sc] (all $cmd[{$sc-pos}..])
   }
 
 } else {
