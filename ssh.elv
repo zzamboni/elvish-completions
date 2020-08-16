@@ -1,5 +1,6 @@
 use ./comp
 use re
+use str
 
 config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
 
@@ -40,7 +41,7 @@ ssh-opts = [
 ]
 
 fn -ssh-host-completions [arg &suffix='']{
-  user-given = (joins '' [(re:find '^(.*@)' $arg)[groups][1][text]])
+  user-given = (str:join '' [(re:find '^(.*@)' $arg)[groups][1][text]])
   -ssh-hosts | each [host]{ put $user-given$host } | comp:decorate &suffix=$suffix
 }
 
