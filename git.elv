@@ -44,11 +44,19 @@ fn UNTRACKED     { all $status[untracked] | comp:decorate &style=$untracked-styl
 fn UNMERGED      { all $status[unmerged] | comp:decorate &style=$unmerged-style }
 fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
 fn TRACKED       { _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
-fn BRANCHES      [&all=$false]{
+fn BRANCHES      [&all=$false &branch=$true]{
   -allarg = []
+  -branch = ''
   if $all { -allarg = ['--all'] }
+  if $branch { -branch = ' (branch)' }
   _ = ?(-run-git branch --list (all $-allarg) --format '%(refname:short)' 2>&- |
-  comp:decorate &display-suffix=' (branch)' &style=$branch-style)
+  comp:decorate &display-suffix=$-branch &style=$branch-style)
+}
+fn REMOTE-BRANCHES {
+  _ = ?(-run-git branch --list --remote --format '%(refname:short)' 2>&- |
+  grep -v HEAD |
+  each [branch]{ re:replace 'origin/' '' $branch } |
+  comp:decorate &display-suffix=' (remote)' &style=$branch-style)
 }
 fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
 fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(re:split : $l)][0] } ) }
@@ -57,6 +65,7 @@ git-completions = [
   &add=           [ [stem]{ MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]
   &stage=         add
   &checkout=      [ { MODIFIED; BRANCHES } ... ]
+  &switch=        [ { $BRANCHES~ &branch=$false; REMOTE-BRANCHES } ]
   &mv=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
   &rm=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
   &diff=          [ { MODIFIED; BRANCHES  } ... ]
