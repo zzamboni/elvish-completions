@@ -39,20 +39,20 @@ The =comp= module provides a few functions that make it easier to define complet
 As a first step, install the =elvish-completions= package using [[https://elvish.io/ref/epm.html][epm]]:
 
 #+begin_src elvish
-  use epm
-  epm:install github.com/zzamboni/elvish-completions
+use epm
+epm:install github.com/zzamboni/elvish-completions
 #+end_src
 
 From the file where you will define your completions, load this module:
 
 #+begin_src elvish
-  use github.com/zzamboni/elvish-completions/comp
+use github.com/zzamboni/elvish-completions/comp
 #+end_src
 
 The main entry points for this module are =comp:item=, =comp:sequence= and =comp:subcommands=. Each one receives a single argument containing a  "completion definition", which indicates how the completions will be produced. Each one receives a different kind of completion structure, and returns a corresponding completion function, which receives the current contents of the command line (as passed to the [[https://elvish.io/ref/edit.html#argument-completer][argument completer functions]]) and returns the appropriate completions. The function returned by the =comp:*= functions can be assigned directly to an element of =$edit:completion:arg-completer=. A simple example:
 
 #+begin_src elvish
-  edit:completion:arg-completer[foo] = (comp:item [ bar baz ])
+edit:completion:arg-completer[foo] = (comp:item [ bar baz ])
 #+end_src
 
 If you type this in your terminal, and then type =foo<space>= and press ~Tab~, you will see the appropriate completions:
@@ -87,8 +87,8 @@ The base building block is the "item", can be one of the following:
 In this case, we define a function which receives the current "stem" (the part of the filename the user has typed so far) and offers all the relevant files, then filters those which are directories, and returns them as completion possibilities. We pass the function directly as a completion item to =comp:-expand=.
 
 #+begin_src elvish
-  fn complete-dirs [arg]{ put {$arg}* | each [x]{ if (-is-dir $x) { put $x } } }
-  edit:completion:arg-completer[cd] = (comp:item $complete-dirs~)
+fn complete-dirs [arg]{ put {$arg}* | each [x]{ if (-is-dir $x) { put $x } } }
+edit:completion:arg-completer[cd] = (comp:item $complete-dirs~)
 #+end_src
 
 I defined the =complete-dirs= function separately only for clarity - you can also embed the lambda directly as an argument to =comp:item=.
@@ -96,7 +96,7 @@ I defined the =complete-dirs= function separately only for clarity - you can als
 For file and directory completion, you can use the utility function =comp:files= instead of defining your own function (see [[*Utility functions][Utility functions]]):
 
 #+begin_src elvish
-  edit:completion:arg-completer[cd] = (comp:item [arg]{ comp:files $arg &dirs-only })
+edit:completion:arg-completer[cd] = (comp:item [arg]{ comp:files $arg &dirs-only })
 #+end_src
 
 *** Sequences and command-line options
@@ -104,13 +104,13 @@ For file and directory completion, you can use the utility function =comp:files=
 Completion items can be aggregated in a /sequence of items/ and used with the =comp:sequence= function when you need to provide different completions for different positional arguments of a command. Sequences include support for command-line options at the beginning of the command. The definition structure in this case has to be an array of items, which will be applied depending on their position within the command parameter sequence. If the the last element of the list is the string =...= (three periods), the next-to-last element of the list is repeated for all later arguments. If no completions should be provided past the last argument, simply omit the periods. If a sequence should produce no completions at all, you can use an empty list =[]=. If any specific elements of the sequence should have no completions, you can specify ={ comp:empty }= or =[]= as its value.
 
 If the =&opts= option is passed to the =comp:sequence= function, it must contain a single definition item which produces a list of command-line options that are allowed at the beginning of the command, when no other arguments have been provided. Options can be specified in either of the following formats:
-  - As a string which gets converted to a long-style option; e.g. =all= to specify the =--all= option. The string must not contain the dashes at the beginning.
-  - As a map which may contain the following keys:
-    - =short= for the short one-letter option;
-    - =long= for the long-option string;
-    - =desc= for a descriptive string which gets shown in the completion menu;
-    - =arg-required= or =arg-optional=: either one but not both can be set to =$true= to indicate whether the option takes a mandatory or optional argument;
-    - =arg-completer= can be specified and contain a completion item as described in [[*Items][Items]], and which will be expanded to provide completions for that argument's values.
+- As a string which gets converted to a long-style option; e.g. =all= to specify the =--all= option. The string must not contain the dashes at the beginning.
+- As a map which may contain the following keys:
+  - =short= for the short one-letter option;
+  - =long= for the long-option string;
+  - =desc= for a descriptive string which gets shown in the completion menu;
+  - =arg-required= or =arg-optional=: either one but not both can be set to =$true= to indicate whether the option takes a mandatory or optional argument;
+  - =arg-completer= can be specified and contain a completion item as described in [[*Items][Items]], and which will be expanded to provide completions for that argument's values.
 
 Simple example of a completion data structure for option =-t= (long form =--type=), which has a mandatory argument which can be =elv=, =org= or =txt=:
 
@@ -128,19 +128,19 @@ Simple example of a completion data structure for option =-t= (long form =--type
 *Example #2:* we can improve on the previous completer for =cd= by preventing more than one argument from being completed (only the first argument will be completed using =complete-dirs=, since the list does not end with =...=):
 
 #+begin_src elvish
-  edit:completion:arg-completer[cd] = (comp:sequence [ [arg]{ comp:files $arg &dirs-only }])
+edit:completion:arg-completer[cd] = (comp:sequence [ [arg]{ comp:files $arg &dirs-only }])
 #+end_src
 
 *Example #3:* a simple completer for =ls= with a subset of its options. Note that =-l= and =-R= are only provided as completions when you have not typed any filenames yet. Also note that we are using [[*Utility functions][comp:decorate]] to display the files in a different color, and the =...= at the end of the sequence to use the same completer for all further elements.
 
 #+begin_src elvish
-  ls-opts = [
-    [ &short=l                 &desc='use a long listing format' ]
-    [ &short=R &long=recursive &desc='list subdirectories recursively' ]
-  ]
-  edit:completion:arg-completer[ls] = (comp:sequence &opts=$ls-opts \
-    [ [arg]{ put $arg* | comp:decorate &style=blue } ... ]
-  )
+ls-opts = [
+  [ &short=l                 &desc='use a long listing format' ]
+  [ &short=R &long=recursive &desc='list subdirectories recursively' ]
+]
+edit:completion:arg-completer[ls] = (comp:sequence &opts=$ls-opts \
+  [ [arg]{ put $arg* | comp:decorate &style=blue } ... ]
+)
 #+end_src
 
 *Example #4:* See the [[https://github.com/zzamboni/elvish-completions/blob/master/ssh.org][ssh completer]] for a real-world example of using sequences.
@@ -152,19 +152,19 @@ Finally, completion sequences can be aggregated into /subcommand structures/ tog
 *Example #5:* a simple completer for the =brew= package manager, with support for the =install=, =uninstall= and =cat= commands. =install= and =cat= gets as completions all available packages (the output of the =brew search= command), while =uninstall= only completes installed packages (the output of =brew list=). Note that for =install= and =uninstall= we automatically extract command-line options from their help messages using the =comp:extract-opts= function, and pass them as the =&opts= option in the corresponding sequence functions. Also note that all =&opts= elements get initialized at definition time (they are arrays), whereas the sequence completions get evaluated at runtime (they are lambdas), to automatically update according to the current packages. The =cat= command sequence allows only one option. The load-time initialization of the options incurs a small delay, and you could replace these with lambdas as well so that the options are computed at runtime.
 
 #+begin_src elvish
-  brew-completions = [
-    &install= (comp:sequence \
-      &opts= [ (brew install -h | take 1 | comp:extract-opts &regex='()--(\w[\w-]*)()') ] \
-      [ { brew search } ... ]
-    )
-    &uninstall= (comp:sequence \
-      &opts= [ (brew uninstall -h | take 1 | comp:extract-opts &regex='()--(\w[\w-]*)()') ] \
-      [ { brew list } ... ]
-    )
-    &cat= (comp:sequence [{ brew search }])
-  ]
+brew-completions = [
+  &install= (comp:sequence \
+    &opts= [ (brew install -h | take 1 | comp:extract-opts &regex='()--(\w[\w-]*)()') ] \
+    [ { brew search } ... ]
+  )
+  &uninstall= (comp:sequence \
+    &opts= [ (brew uninstall -h | take 1 | comp:extract-opts &regex='()--(\w[\w-]*)()') ] \
+    [ { brew list } ... ]
+  )
+  &cat= (comp:sequence [{ brew search }])
+]
 
-  edit:completion:arg-completer[brew] = (comp:subcommands &opts= [ version ] $brew-completions)
+edit:completion:arg-completer[brew] = (comp:subcommands &opts= [ version ] $brew-completions)
 #+end_src
 
 *Example #6:* a simple completer for a subset of =vagrant=, which receives commands which may have subcommands and options of their own. Note that the value of =&up= is a =comp:sequence=, but the value of =&box= is another =comp:subcommands= which includes the completions for =box add= and =box remove=. Also note the use of the =comp:extract-opts= function to extract the command-line arguments automatically from the help messages.
@@ -172,20 +172,20 @@ Finally, completion sequences can be aggregated into /subcommand structures/ tog
 *Tip:* note that the values of =&opts= are functions (e.g. ={ vagrant-up -h | comp:extract-opts }=) instead of arrays (e.g. =( vagrant up -h | comp:extract-opts )=). As mentioned in Example #5, both would be valid, but in the latter case they are all initialized at load time (when the data structure is defined), which might introduce a delay (particularly with more command definitions). By using functions the options are only extracted at runtime when the completion is requested. For further optimization, =vagrant-opts= could be made to memoize the values so that the delay only occurs the first time.
 
 #+begin_src elvish
-  vagrant-completions = [
-    &up= (comp:sequence [] \
-      &opts= { vagrant up -h | comp:extract-opts }
-    )
-    &box= (comp:subcommands [
-        &add= (comp:sequence [] \
-          &opts= { vagrant box add -h | comp:extract-opts }
-        )
-        &remove= (comp:sequence [ { vagrant box list | eawk [_ @f]{ put $f[0] } } ... ] \
-          &opts= { vagrant box remove -h | comp:extract-opts }
-        )
-  ])]
+vagrant-completions = [
+  &up= (comp:sequence [] \
+    &opts= { vagrant up -h | comp:extract-opts }
+  )
+  &box= (comp:subcommands [
+      &add= (comp:sequence [] \
+        &opts= { vagrant box add -h | comp:extract-opts }
+      )
+      &remove= (comp:sequence [ { vagrant box list | eawk [_ @f]{ put $f[0] } } ... ] \
+        &opts= { vagrant box remove -h | comp:extract-opts }
+      )
+])]
 
-  edit:completion:arg-completer[vagrant] = (comp:subcommands &opts= [ version help ] $vagrant-completions)
+edit:completion:arg-completer[vagrant] = (comp:subcommands &opts= [ version help ] $vagrant-completions)
 #+end_src
 
 *Example #7:* See the [[https://github.com/zzamboni/elvish-completions/blob/master/git.org][git completer]] for a real-world subcommand completion example, which also shows how extensively auto-population of subcommands and options can be done by extracting information from help messages.
@@ -216,19 +216,19 @@ Finally, completion sequences can be aggregated into /subcommand structures/ tog
 Typical use would be to populate an =&opts= element with something like this:
 
 #+begin_src elvish
-  comp:sequence &opts= { vagrant -h | comp:extract-opts } [ ... ]
+comp:sequence &opts= { vagrant -h | comp:extract-opts } [ ... ]
 #+end_src
 
 The regular expression used to extract the options can be specified with the =&regex= option. Its default value is:
 
 #+begin_src elvish :noweb-ref opt-capture-regex
-    &regex='^\s*(?:-(\w),?\s*)?(?:--?([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
+&regex='^\s*(?:-(\w),?\s*)?(?:--?([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
 #+end_src
 
 The mapping of capture groups from the regex to option components is defined by the =&regex-map= option. Its default value (which also shows the available fields) is:
 
 #+begin_src elvish :noweb-ref opt-capture-map
-    &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-required=4 &desc=5]
+&regex-map=[&short=1 &long=2 &arg-optional=3 &arg-required=4 &desc=5]
 #+end_src
 
 At least one of =short= or =long= must be present in =regex-map=. The =arg-optional= and =arg-required= groups, if present, are handled specially: if any of them is not empty, then its contents is stored as =arg-desc= in the output, and the corresponding =arg-required= / =arg-optional= is set to =$true=. Also =completer-= is set to =comp:files= by default.
@@ -238,23 +238,23 @@ If =&fold= is =$true=, then the input is preprocessed to join option description
 *Example #8:* the =brew= completer shown before can be made to show package names in different styles (green when installing, red when uninstalling). Here we also show the use of =comp:extract-opts= with custom regex for capturing the options from the =brew= help messages:
 
 #+begin_src elvish
-  brew-completions = [
-    &install= (comp:sequence \
-      &opts= [(brew install -h | take 1 |
-          comp:extract-opts &regex='--(\w[\w-]*)(?:=(.*?)\])?' &regex-map=[&long=1 &arg-required=2]
-      )]  \
-      [ { brew search | comp:decorate &style=green } ... ]
-    )
-    &uninstall= (comp:sequence \
-      &opts= [(brew uninstall -h | take 1 |
-          comp:extract-opts &regex='--(\w[\w-]*)' &regex-map=[&long=1]
-      )] \
-      [ { brew list | comp:decorate &style=red } ... ]
-    )
-    &cat= (comp:sequence [{ brew search }])
-  ]
+brew-completions = [
+  &install= (comp:sequence \
+    &opts= [(brew install -h | take 1 |
+        comp:extract-opts &regex='--(\w[\w-]*)(?:=(.*?)\])?' &regex-map=[&long=1 &arg-required=2]
+    )]  \
+    [ { brew search | comp:decorate &style=green } ... ]
+  )
+  &uninstall= (comp:sequence \
+    &opts= [(brew uninstall -h | take 1 |
+        comp:extract-opts &regex='--(\w[\w-]*)' &regex-map=[&long=1]
+    )] \
+    [ { brew list | comp:decorate &style=red } ... ]
+  )
+  &cat= (comp:sequence [{ brew search }])
+]
 
-  edit:completion:arg-completer[brew] = (comp:subcommands &opts= [ version ] $brew-completions)
+edit:completion:arg-completer[brew] = (comp:subcommands &opts= [ version ] $brew-completions)
 #+end_src
 
 * Implementation
@@ -266,8 +266,8 @@ If =&fold= is =$true=, then the input is preprocessed to join option description
 We start by loading some basic modules we need.
 
 #+begin_src elvish
-  use re
-  use github.com/zzamboni/elvish-modules/util
+use re
+use github.com/zzamboni/elvish-modules/util
 #+end_src
 
 ** Utility functions
@@ -277,19 +277,19 @@ We start by loading some basic modules we need.
 =comp:decorate= maps its input through =edit:complex-candidate= with the given options. Can be passed the same options as [[https://elvish.io/ref/edit.html#argument-completer][edit:complex-candidate]] except for =&display=, which does not make sense when multiple inputs are provided. In addition, if =&suffix= is specified, it is used to set both =&display-suffix= and =&code-suffix=.
 
 #+begin_src elvish
-  fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
-    # &style is currently ignored because it is not supported by Elvish
-    if (eq (count $input) 0) {
-      input = [(all)]
-    }
-    if (not-eq $suffix '') {
-      display-suffix = $suffix
-      code-suffix = $suffix
-    }
-    each [k]{
-      edit:complex-candidate &code-suffix=$code-suffix &display=$k$display-suffix $k
-    } $input
+fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
+  # &style is currently ignored because it is not supported by Elvish
+  if (eq (count $input) 0) {
+    input = [(all)]
   }
+  if (not-eq $suffix '') {
+    display-suffix = $suffix
+    code-suffix = $suffix
+  }
+  each [k]{
+    edit:complex-candidate &code-suffix=$code-suffix &display=$k$display-suffix $k
+  } $input
+}
 #+end_src
 
 *** comp:empty
@@ -297,7 +297,7 @@ We start by loading some basic modules we need.
 =comp:empty= produces no completions. It can be used to mark an item in a sequence that should not produce any completions.
 
 #+begin_src elvish
-  fn empty { nop }
+fn empty { nop }
 #+end_src
 
 *** comp:files and comp:dirs
@@ -305,22 +305,22 @@ We start by loading some basic modules we need.
 =comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&dirs-only= is =$true=, only directories are returned.
 
 #+begin_src elvish
-  fn files [arg &regex='' &dirs-only=$false]{
-    edit:complete-filename $arg | each [c]{
-      x = $c[stem]
-      if (or (-is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
-        put $c
-      }
+fn files [arg &regex='' &dirs-only=$false]{
+  edit:complete-filename $arg | each [c]{
+    x = $c[stem]
+    if (or (-is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
+      put $c
     }
   }
+}
 #+end_src
 
 =comp:dirs= is simply a convenience wrapper around =comp:files= which sets =&dirs-only= automatically.
 
 #+begin_src elvish
-  fn dirs [arg &regex='']{
-    files $arg &regex=$regex &dirs-only=$true
-  }
+fn dirs [arg &regex='']{
+  files $arg &regex=$regex &dirs-only=$true
+}
 #+end_src
 
 *** comp:extract-opts
@@ -330,47 +330,47 @@ We start by loading some basic modules we need.
 If =&fold= is =$true=, then the input is preprocessed to join option descriptions which span more than one line (the heuristic is not perfect and may not work in all cases, also for now it only joins one line after the option).
 
 #+begin_src elvish :noweb yes
-  fn extract-opts [@cmd
-    <<opt-capture-regex>>
-    <<opt-capture-map>>
-    &fold=$false
-  ]{
-    -line = ''
-    capture = $all~
-    if $fold {
-      capture = { each [l]{
-          if (re:match '^\s+\w' $l) {
-            put $-line$l
-            -line = ''
-          } else {
-            put $-line
-            -line = $l
-          }
+fn extract-opts [@cmd
+  <<opt-capture-regex>>
+  <<opt-capture-map>>
+  &fold=$false
+]{
+  -line = ''
+  capture = $all~
+  if $fold {
+    capture = { each [l]{
+        if (re:match '^\s+\w' $l) {
+          put $-line$l
+          -line = ''
+        } else {
+          put $-line
+          -line = $l
         }
-      }
-    }
-    $capture | each [l]{ re:find $regex $l } | each [m]{
-      g = $m[groups]
-      opt = [&]
-      keys $regex-map | each [k]{
-        if (has-key $g $regex-map[$k]) {
-          field = $g[$regex-map[$k]][text]
-          if (not-eq $field '') {
-            if (has-value [arg-optional arg-required] $k) {
-              opt[$k] = $true
-              opt[arg-desc] = $field
-              opt[completer] = $files~
-            } else {
-              opt[$k] = $field
-            }
-          }
-        }
-      }
-      if (or (has-key $opt short) (has-key $opt long)) {
-        put $opt
       }
     }
   }
+  $capture | each [l]{ re:find $regex $l } | each [m]{
+    g = $m[groups]
+    opt = [&]
+    keys $regex-map | each [k]{
+      if (has-key $g $regex-map[$k]) {
+        field = $g[$regex-map[$k]][text]
+        if (not-eq $field '') {
+          if (has-value [arg-optional arg-required] $k) {
+            opt[$k] = $true
+            opt[arg-desc] = $field
+            opt[completer] = $files~
+          } else {
+            opt[$k] = $field
+          }
+        }
+      }
+    }
+    if (or (has-key $opt short) (has-key $opt long)) {
+      put $opt
+    }
+  }
+}
 #+end_src
 
 *** comp:-handler-arity
@@ -397,21 +397,21 @@ The backend completion functions =comp:-expand-item=, =comp:-expand-sequence= an
 =comp:-expand-item=  expands a "completion item" into its completion values. If it's a function, it gets executed with arguments corresponding to its arity; if it's a list, it's exploded to its elements.
 
 #+begin_src elvish
-  fn -expand-item [def @cmd]{
-    arg = $cmd[-1]
-    what = (kind-of $def)
-    if (eq $what 'fn') {
-      [ &no-args=  { $def }
-        &one-arg=  { $def $arg }
-        &rest-arg= { $def $@cmd }
-        &other-args= { put '<completion-fn-arity-error>' }
-      ][(-handler-arity $def)]
-    } elif (eq $what 'list') {
-      all $def
-    } else {
-      echo (styled "comp:-expand-item: invalid item of type "$what": "(to-string $def) red) >/dev/tty
-    }
+fn -expand-item [def @cmd]{
+  arg = $cmd[-1]
+  what = (kind-of $def)
+  if (eq $what 'fn') {
+    [ &no-args=  { $def }
+      &one-arg=  { $def $arg }
+      &rest-arg= { $def $@cmd }
+      &other-args= { put '<completion-fn-arity-error>' }
+    ][(-handler-arity $def)]
+  } elif (eq $what 'list') {
+    all $def
+  } else {
+    echo (styled "comp:-expand-item: invalid item of type "$what": "(to-string $def) red) >/dev/tty
   }
+}
 #+end_src
 
 *** comp:-expand-sequence
@@ -419,7 +419,7 @@ The backend completion functions =comp:-expand-item=, =comp:-expand-sequence= an
 =comp:-expand-sequence= receives an array of definition items and the current contents of the command line, and uses =edit:complete-getopt= to actually generate the completions. For this, we need to make sure the options and argument handler data structures are in accordance to what =edit:complete-getopt= expects.
 
 #+begin_src elvish
-  fn -expand-sequence [seq @cmd &opts=[]]{
+fn -expand-sequence [seq @cmd &opts=[]]{
 #+end_src
 
 We first preprocess the options. If =&opts= is provided, it has to be a completion item which expands to a list with one element per option. Elements that are maps are assumed to be in getopt format (with keys =short=, =long=, =desc=, =arg-required=, =arg-optional= and =arg-desc=) and used as-is (their structure is not checked). Elements which are strings are considered as long option names and converted to the appropriate data structure.
@@ -427,45 +427,45 @@ We first preprocess the options. If =&opts= is provided, it has to be a completi
 Because =edit:complete-getopt= support option argument completion with key =completer=. So if option structure has an =arg-completer= key, then it is expanded as an completion item and offers as a completer.
 
 #+begin_src elvish
-  final-opts = [(
-      -expand-item $opts $@cmd | each [opt]{
-        if (eq (kind-of $opt) map) {
-          if (has-key $opt arg-completer) {
-            opt[completer] = [_]{ -expand-item $opt[arg-completer] $@cmd }
-          }
-          put $opt
-        } else {
-          put [&long= $opt]
+final-opts = [(
+    -expand-item $opts $@cmd | each [opt]{
+      if (eq (kind-of $opt) map) {
+        if (has-key $opt arg-completer) {
+          opt[completer] = [_]{ -expand-item $opt[arg-completer] $@cmd }
         }
+        put $opt
+      } else {
+        put [&long= $opt]
       }
-  )]
+    }
+)]
 #+end_src
 
 We also preprocess the handlers. =edit:complete-getopt= expects each handler to receive only one argument (the current word in the command line), but =comp= allows handlers to receive no arguments, one argument (the current element of the command line) or multiple arguments (the whole command line), so we need to normalize them. Happily, Elvish's functional nature makes this easy by checking the arity of each handler and, if necessary, wrapping them in one-argument functions, but passing them the information they expect. We also wrap items which are arrays into corresponding functions. As a special case, the string ='...'= is also passed, as it is allowed by =edit:complete-getopt= to indicate that the last element needs to be repeated for future elements. Any other handlers are ignored.
 
 #+begin_src elvish
-  final-handlers = [(
-      all $seq | each [f]{
-        if (eq (kind-of $f) 'fn') {
-          put [
-            &no-args=  [_]{ $f }
-            &one-arg=  $f
-            &rest-arg= [_]{ $f $@cmd }
-            &other-args= [_]{ put '<completion-fn-arity-error>' }
-          ][(-handler-arity $f)]
-        } elif (eq (kind-of $f) 'list') {
-          put [_]{ all $f }
-        } elif (and (eq (kind-of $f) 'string') (eq $f '...')) {
-          put $f
-        }
+final-handlers = [(
+    all $seq | each [f]{
+      if (eq (kind-of $f) 'fn') {
+        put [
+          &no-args=  [_]{ $f }
+          &one-arg=  $f
+          &rest-arg= [_]{ $f $@cmd }
+          &other-args= [_]{ put '<completion-fn-arity-error>' }
+        ][(-handler-arity $f)]
+      } elif (eq (kind-of $f) 'list') {
+        put [_]{ all $f }
+      } elif (and (eq (kind-of $f) 'string') (eq $f '...')) {
+        put $f
       }
-  )]
+    }
+)]
 #+end_src
 
 Finally, we call =edit:complete-getopt= with the corresponding data structures. It expects the current line /without/ the initial command, so we remove that as well.
 
 #+begin_src elvish
-    edit:complete-getopt $cmd[1:] $final-opts $final-handlers
+edit:complete-getopt $cmd[1:] $final-opts $final-handlers
   }
 #+end_src
 
@@ -474,40 +474,40 @@ Finally, we call =edit:complete-getopt= with the corresponding data structures. 
 =comp:-expand-subcommands= receives a definition map and the current contents of the command line.
 
 #+begin_src elvish
-  fn -expand-subcommands [def @cmd &opts=[]]{
+fn -expand-subcommands [def @cmd &opts=[]]{
 #+end_src
 
 The algorithm for =comp:-expand-subcommands= is a bit counterintuitive, this is how it works:
 
 1. Scan the current command to see if a valid subcommand is found (i.e. an element which matches an existing key in =$def=).
-  #+begin_src elvish
-      subcommands = [(keys $def)]
-      n = (count $cmd)
-      kw = [(range 1 $n | each [i]{
-            if (has-value $subcommands $cmd[$i]) { put $cmd[$i] $i }
-      })]
-  #+end_src
+   #+begin_src elvish
+subcommands = [(keys $def)]
+n = (count $cmd)
+kw = [(range 1 $n | each [i]{
+      if (has-value $subcommands $cmd[$i]) { put $cmd[$i] $i }
+})]
+   #+end_src
 
 2. If a subcommand is found, call its expansion function directly, and with the command line at that position. We check if the definition is a string, in which case it's expected to be the name of some other command whose definition we need to use (to implement command aliases) - we substitute the alias for its target command and call =-expand-subcommands= with the new values.
-  #+begin_src elvish
-      if (and (not-eq $kw []) (not-eq $kw[1] (- $n 1))) {
-        sc sc-pos = $kw[0 1]
-        if (eq (kind-of $def[$sc]) 'string') {
-          cmd[$sc-pos] = $def[$sc]
-          -expand-subcommands &opts=$opts $def $@cmd
-        } else {
-          $def[$sc] (all $cmd[{$sc-pos}:])
-        }
-  #+end_src
+   #+begin_src elvish
+if (and (not-eq $kw []) (not-eq $kw[1] (- $n 1))) {
+  sc sc-pos = $kw[0 1]
+  if (eq (kind-of $def[$sc]) 'string') {
+    cmd[$sc-pos] = $def[$sc]
+    -expand-subcommands &opts=$opts $def $@cmd
+  } else {
+    $def[$sc] (all $cmd[{$sc-pos}:])
+  }
+   #+end_src
 
 3. If no subcommand is found, generate a sequence definition which returns the subcommand names for the first position (including any provided options).
-  #+begin_src elvish
+   #+begin_src elvish
       } else {
         top-def = [ { put $@subcommands } ]
         -expand-sequence &opts=$opts $top-def $@cmd
       }
     }
-  #+end_src
+   #+end_src
 
 This seems backwards from what one (or at least I) initially expected - I attempted at first multiple variations to expand the subcommands/top-options first, and then only expand the subcommand options and definition from the "tail" handlers, but this doesn't work because of the way =edit:complete-getops= works, the top-level options would get expanded for subcommands as well. This way, we catch the more specific case first (subcommand definition) and only if there's no subcommand in the command line yet, we do the top-level expansion. All with simple and clear code (you wouldn't believe some of the variations I tried while trying to get this to work!).
 
@@ -518,38 +518,38 @@ The wrapper functions =comp:item=, =comp:sequence= and =comp:subcommands= are th
 *** comp:item
 
 #+begin_src elvish
-  fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
-    put [@cmd]{
-      $pre-hook $@cmd
-      result = [(-expand-item $item $@cmd)]
-      $post-hook $result $@cmd
-      put $@result
-    }
+fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
+  put [@cmd]{
+    $pre-hook $@cmd
+    result = [(-expand-item $item $@cmd)]
+    $post-hook $result $@cmd
+    put $@result
   }
+}
 #+end_src
 
 *** comp:sequence
 
 #+begin_src elvish
-  fn sequence [sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-    put [@cmd]{
-      $pre-hook $@cmd
-      result = [(-expand-sequence &opts=$opts $sequence $@cmd)]
-      $post-hook $result $@cmd
-      put $@result
-    }
+fn sequence [sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
+  put [@cmd]{
+    $pre-hook $@cmd
+    result = [(-expand-sequence &opts=$opts $sequence $@cmd)]
+    $post-hook $result $@cmd
+    put $@result
   }
+}
 #+end_src
 
 *** comp:subcommands
 
 #+begin_src elvish
-  fn subcommands [def &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-    put [@cmd]{
-      $pre-hook $@cmd
-      result = [(-expand-subcommands &opts=$opts $def $@cmd)]
-      $post-hook $result $@cmd
-      put $@result
-    }
+fn subcommands [def &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
+  put [@cmd]{
+    $pre-hook $@cmd
+    result = [(-expand-subcommands &opts=$opts $def $@cmd)]
+    $post-hook $result $@cmd
+    put $@result
   }
+}
 #+end_src

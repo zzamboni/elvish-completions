@@ -54,9 +54,9 @@ fn BRANCHES      [&all=$false &branch=$true]{
 }
 fn REMOTE-BRANCHES {
   _ = ?(-run-git branch --list --remote --format '%(refname:short)' 2>&- |
-  grep -v HEAD |
-  each [branch]{ re:replace 'origin/' '' $branch } |
-  comp:decorate &display-suffix=' (remote)' &style=$branch-style)
+    grep -v HEAD |
+    each [branch]{ re:replace 'origin/' '' $branch } |
+  comp:decorate &display-suffix=' (remote branch)' &style=$branch-style)
 }
 fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
 fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(re:split : $l)][0] } ) }
@@ -78,56 +78,56 @@ git-completions = [
   &cherry=        [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
   &cherry-pick=   [ { $BRANCHES~ &all } ... ]
   &stash=         [
-                    &list= (comp:sequence [])
-                    &clear= (comp:sequence [])
-                    &show= (comp:sequence [ $STASHES~ ])
-                    &drop= (comp:sequence &opts=[[&short=q &long=quiet]] [ $STASHES~ ])
-                    &pop=   (comp:sequence &opts=[[&short=q &long=quiet] [&long=index]] [ $STASHES~ ])
-                    &apply= pop
-                    &branch= (comp:sequence [ [] $STASHES~ ])
-                    &push= (comp:sequence [ $comp:files~ ... ] &opts=[
-                      [&short=p &long=patch]
-                      [&short=k &long=keep-index] [&long=no-keep-index]
-                      [&short=q &long=quiet]
-                      [&short=u &long=include-untracked]
-                      [&short=a &long=all]
-                      [&short=m &long=message &arg-required]
-                    ])
-                    &create= (comp:sequence [])
-                    &store= (comp:sequence [ $BRANCHES~ ] &opts=[
-                      [&short=m &long=message &arg-required]
-                      [&short=q &long=quiet]
-                    ])
-                  ]
+    &list= (comp:sequence [])
+    &clear= (comp:sequence [])
+    &show= (comp:sequence [ $STASHES~ ])
+    &drop= (comp:sequence &opts=[[&short=q &long=quiet]] [ $STASHES~ ])
+    &pop=   (comp:sequence &opts=[[&short=q &long=quiet] [&long=index]] [ $STASHES~ ])
+    &apply= pop
+    &branch= (comp:sequence [ [] $STASHES~ ])
+    &push= (comp:sequence [ $comp:files~ ... ] &opts=[
+        [&short=p &long=patch]
+        [&short=k &long=keep-index] [&long=no-keep-index]
+        [&short=q &long=quiet]
+        [&short=u &long=include-untracked]
+        [&short=a &long=all]
+        [&short=m &long=message &arg-required]
+    ])
+    &create= (comp:sequence [])
+    &store= (comp:sequence [ $BRANCHES~ ] &opts=[
+        [&short=m &long=message &arg-required]
+        [&short=q &long=quiet]
+    ])
+  ]
 ]
 
 fn init {
-    completions = [&]
-    -run-git help -a --no-verbose | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
-      seq = [ $comp:files~ ... ]
-      if (has-key $git-completions $c) {
-        seq = $git-completions[$c]
-      }
-      if (eq (kind-of $seq) string) {
-        completions[$c] = $seq
-      } elif (eq (kind-of $seq) map) {
-        completions[$c] = (comp:subcommands $seq)
-      } else {
-        completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
-      }
+  completions = [&]
+  -run-git help -a --no-verbose | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
+    seq = [ $comp:files~ ... ]
+    if (has-key $git-completions $c) {
+      seq = $git-completions[$c]
     }
-    -run-git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
-      alias target = $m[groups][1 2][text]
-      if (has-key $completions $target) {
-        completions[$alias] = $target
-      } else {
-        completions[$alias] = (comp:sequence [])
-      }
+    if (eq (kind-of $seq) string) {
+      completions[$c] = $seq
+    } elif (eq (kind-of $seq) map) {
+      completions[$c] = (comp:subcommands $seq)
+    } else {
+      completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
     }
-    git-arg-completer = (comp:subcommands $completions ^
-      &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
-    )
-    edit:completion:arg-completer[git] = $git-arg-completer
+  }
+  -run-git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
+    alias target = $m[groups][1 2][text]
+    if (has-key $completions $target) {
+      completions[$alias] = $target
+    } else {
+      completions[$alias] = (comp:sequence [])
+    }
+  }
+  git-arg-completer = (comp:subcommands $completions ^
+    &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
+  )
+  edit:completion:arg-completer[git] = $git-arg-completer
 }
 
 init
