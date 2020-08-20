@@ -21,14 +21,14 @@ Some original inspiration from [[ https://github.com/occivink/config/blob/master
 Install the =elvish-completions= package using [[https://elvish.io/ref/epm.html][epm]]:
 
 #+begin_src elvish
-  use epm
-  epm:install github.com/zzamboni/elvish-completions
+use epm
+epm:install github.com/zzamboni/elvish-completions
 #+end_src
 
 In your =rc.elv=, load this module:
 
 #+begin_src elvish
-  use github.com/zzamboni/elvish-completions/git
+use github.com/zzamboni/elvish-completions/git
 #+end_src
 
 *Note:* This package depends on [[https://github.com/muesli/elvish-libs][@muesli's git library]]. If you use =epm= as described above, this package will be installed automatically, but if you clone this repository by hand, you need to install it by hand.
@@ -38,18 +38,18 @@ Now you can type =git<space>=, press ~Tab~ and see the corresponding completions
 Several components are colorized, you can configure the styles by setting these variables (default values shown):
 
 #+begin_src elvish :noweb-ref git-completion-styles
-  modified-style  = yellow
-  untracked-style = red
-  tracked-style   = ''
-  branch-style    = blue
-  remote-style    = cyan
-  unmerged-style  = magenta
+modified-style  = yellow
+untracked-style = red
+tracked-style   = ''
+branch-style    = blue
+remote-style    = cyan
+unmerged-style  = magenta
 #+end_src
 
 You can change which command is used instead of =git= by assigning it to =$git:git-command=. The command assigned needs to understand at least the same commands and options as =git=. One example of such command is [[https://hub.github.com/][hub]]. You can also assign functions (for example, a wrapper function around =git=).
 
 #+begin_src elvish :noweb-ref git-command
-  git-command = git
+git-command = git
 #+end_src
 
 * Implementation
@@ -63,29 +63,29 @@ You can change which command is used instead of =git= by assigning it to =$git:g
 We first load a number of libraries, including =comp=, the Elvish completion framework.
 
 #+begin_src elvish
-  use ./comp
-  use re
-  use str
-  use github.com/muesli/elvish-libs/git
-  use github.com/zzamboni/elvish-modules/util
+use ./comp
+use re
+use str
+use github.com/muesli/elvish-libs/git
+use github.com/zzamboni/elvish-modules/util
 #+end_src
 
 This is where the big completion-definition map will get progressively built.
 
 #+begin_src elvish
-  completions = [&]
+completions = [&]
 #+end_src
 
 We store the output of =git:status= in a global variable to make it easier to access by the different completion functions.
 
 #+begin_src elvish
-  status = [&]
+status = [&]
 #+end_src
 
 Here we will store the completer function (for easier access and for testing).
 
 #+begin_src elvish
-  git-arg-completer = { }
+git-arg-completer = { }
 #+end_src
 
 ** Configuration variables
@@ -93,13 +93,13 @@ Here we will store the completer function (for easier access and for testing).
 The =git-command= variable contains the command or function to run instead of =git= (can be assigned to =hub=, for example, or any wrapper function you want to use, as long as it accepts the same options and commands as =git=).
 
 #+begin_src elvish :noweb yes
-  <<git-command>>
+<<git-command>>
 #+end_src
 
 The =$*-style= variables contains the style (as per =styled=) to use for different completion components the completion menu. Set to =''= (an empty string) to show in the normal style.
 
 #+begin_src elvish :noweb yes
-  <<git-completion-styles>>
+<<git-completion-styles>>
 #+end_src
 
 ** Utility functions
@@ -109,47 +109,55 @@ The =-run-git= function executes a git-like command, with the given arguments.  
 (please note: =$git-command= is only used for command executed from within this module, not from the =muesli/git= module which is used for some pieces of information, so the integration is not yet perfect. But for most commands it should work - for example if you use =hub= instead of =git=.
 
 #+begin_src elvish
-  fn -run-git [@rest]{
-    gitcmds = [$git-command]
-    if (eq (kind-of $git-command) string) {
-      gitcmds = [(re:split " " $git-command)]
-    }
-    cmd = $gitcmds[0]
-    if (eq (kind-of $cmd) string) {
-      cmd = (external $cmd)
-    }
-    $cmd (all $gitcmds[1:]) $@rest
+fn -run-git [@rest]{
+  gitcmds = [$git-command]
+  if (eq (kind-of $git-command) string) {
+    gitcmds = [(re:split " " $git-command)]
   }
+  cmd = $gitcmds[0]
+  if (eq (kind-of $cmd) string) {
+    cmd = (external $cmd)
+  }
+  $cmd (all $gitcmds[1:]) $@rest
+}
 #+end_src
 
 The =-git-opts= function receives an optional git command, runs =git [command] -h= and parses the output to extract the command line options. The parsing is done with =comp:extract-opts=, but we pre-process the output to join options whose descriptions appear in the next line.
 
 #+begin_src elvish
-  fn -git-opts [@cmd]{
-    _ = ?(-run-git $@cmd -h 2>&1) | drop 1 | if (eq $cmd []) {
-      comp:extract-opts &fold=$true &regex='--(\w[\w-]*)' &regex-map=[&long=1]
-    } else {
-      comp:extract-opts &fold=$true
-    }
+fn -git-opts [@cmd]{
+  _ = ?(-run-git $@cmd -h 2>&1) | drop 1 | if (eq $cmd []) {
+    comp:extract-opts &fold=$true &regex='--(\w[\w-]*)' &regex-map=[&long=1]
+  } else {
+    comp:extract-opts &fold=$true
   }
+}
 #+end_src
 
 We define the functions that return different possible values used in the completions. Some of these functions assume that =$status= contains already the output from =git:status=, which gets executed as the pre-hook of the git completer function below.
 
 #+begin_src elvish
-  fn MODIFIED      { all $status[local-modified] | comp:decorate &style=$modified-style }
-  fn UNTRACKED     { all $status[untracked] | comp:decorate &style=$untracked-style }
-  fn UNMERGED      { all $status[unmerged] | comp:decorate &style=$unmerged-style }
-  fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
-  fn TRACKED       { _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
-  fn BRANCHES      [&all=$false]{
-    -allarg = []
-    if $all { -allarg = ['--all'] }
-    _ = ?(-run-git branch --list (all $-allarg) --format '%(refname:short)' 2>&- |
-    comp:decorate &display-suffix=' (branch)' &style=$branch-style)
-  }
-  fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
-  fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(re:split : $l)][0] } ) }
+fn MODIFIED      { all $status[local-modified] | comp:decorate &style=$modified-style }
+fn UNTRACKED     { all $status[untracked] | comp:decorate &style=$untracked-style }
+fn UNMERGED      { all $status[unmerged] | comp:decorate &style=$unmerged-style }
+fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
+fn TRACKED       { _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
+fn BRANCHES      [&all=$false &branch=$true]{
+  -allarg = []
+  -branch = ''
+  if $all { -allarg = ['--all'] }
+  if $branch { -branch = ' (branch)' }
+  _ = ?(-run-git branch --list (all $-allarg) --format '%(refname:short)' 2>&- |
+  comp:decorate &display-suffix=$-branch &style=$branch-style)
+}
+fn REMOTE-BRANCHES {
+  _ = ?(-run-git branch --list --remote --format '%(refname:short)' 2>&- |
+    grep -v HEAD |
+    each [branch]{ re:replace 'origin/' '' $branch } |
+  comp:decorate &display-suffix=' (remote branch)' &style=$branch-style)
+}
+fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
+fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(re:split : $l)][0] } ) }
 #+end_src
 
 ** Initialization of completion definitions
@@ -157,101 +165,102 @@ We define the functions that return different possible values used in the comple
 =$git:git-completions= contains the specialized completions for some git commands. Each sequence is a list of functions which return the possible completions at that point in the command. The =...= as a last element in some of them indicates that the last completion function is repeated for all further argument positions. The completion can also be a string, in which case it means an alias for some other command.
 
 #+begin_src elvish
-  git-completions = [
-    &add=           [ [stem]{ MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]
-    &stage=         add
-    &checkout=      [ { MODIFIED; BRANCHES } ... ]
-    &mv=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
-    &rm=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
-    &diff=          [ { MODIFIED; BRANCHES  } ... ]
-    &push=          [ $REMOTES~ $BRANCHES~ ]
-    &pull=          [ $REMOTES~ { BRANCHES &all } ]
-    &merge=         [ $BRANCHES~ ... ]
-    &init=          [ [stem]{ put "."; comp:dirs $stem } ]
-    &branch=        [ $BRANCHES~ ... ]
-    &rebase=        [ { $BRANCHES~ &all } ... ]
-    &cherry=        [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
-    &cherry-pick=   [ { $BRANCHES~ &all } ... ]
-    &stash=         [
-                      &list= (comp:sequence [])
-                      &clear= (comp:sequence [])
-                      &show= (comp:sequence [ $STASHES~ ])
-                      &drop= (comp:sequence &opts=[[&short=q &long=quiet]] [ $STASHES~ ])
-                      &pop=   (comp:sequence &opts=[[&short=q &long=quiet] [&long=index]] [ $STASHES~ ])
-                      &apply= pop
-                      &branch= (comp:sequence [ [] $STASHES~ ])
-                      &push= (comp:sequence [ $comp:files~ ... ] &opts=[
-                        [&short=p &long=patch]
-                        [&short=k &long=keep-index] [&long=no-keep-index]
-                        [&short=q &long=quiet]
-                        [&short=u &long=include-untracked]
-                        [&short=a &long=all]
-                        [&short=m &long=message &arg-required]
-                      ])
-                      &create= (comp:sequence [])
-                      &store= (comp:sequence [ $BRANCHES~ ] &opts=[
-                        [&short=m &long=message &arg-required]
-                        [&short=q &long=quiet]
-                      ])
-                    ]
+git-completions = [
+  &add=           [ [stem]{ MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]
+  &stage=         add
+  &checkout=      [ { MODIFIED; BRANCHES } ... ]
+  &switch=        [ { $BRANCHES~ &branch=$false; REMOTE-BRANCHES } ]
+  &mv=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
+  &rm=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
+  &diff=          [ { MODIFIED; BRANCHES  } ... ]
+  &push=          [ $REMOTES~ $BRANCHES~ ]
+  &pull=          [ $REMOTES~ { BRANCHES &all } ]
+  &merge=         [ $BRANCHES~ ... ]
+  &init=          [ [stem]{ put "."; comp:dirs $stem } ]
+  &branch=        [ $BRANCHES~ ... ]
+  &rebase=        [ { $BRANCHES~ &all } ... ]
+  &cherry=        [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
+  &cherry-pick=   [ { $BRANCHES~ &all } ... ]
+  &stash=         [
+    &list= (comp:sequence [])
+    &clear= (comp:sequence [])
+    &show= (comp:sequence [ $STASHES~ ])
+    &drop= (comp:sequence &opts=[[&short=q &long=quiet]] [ $STASHES~ ])
+    &pop=   (comp:sequence &opts=[[&short=q &long=quiet] [&long=index]] [ $STASHES~ ])
+    &apply= pop
+    &branch= (comp:sequence [ [] $STASHES~ ])
+    &push= (comp:sequence [ $comp:files~ ... ] &opts=[
+        [&short=p &long=patch]
+        [&short=k &long=keep-index] [&long=no-keep-index]
+        [&short=q &long=quiet]
+        [&short=u &long=include-untracked]
+        [&short=a &long=all]
+        [&short=m &long=message &arg-required]
+    ])
+    &create= (comp:sequence [])
+    &store= (comp:sequence [ $BRANCHES~ ] &opts=[
+        [&short=m &long=message &arg-required]
+        [&short=q &long=quiet]
+    ])
   ]
+]
 #+end_src
 
 In the =git:init= function we initialize the =$completions= map with the necessary data structure for =comp:subcommands= to provide the completions. We extract as much information as possible automatically from =git= itself.
 
 #+begin_src elvish :noweb yes
-  fn init {
-    completions = [&]
-    <<init-git-commands>>
-    <<init-git-aliases>>
-    <<setup-completer>>
+fn init {
+  completions = [&]
+  <<init-git-commands>>
+  <<init-git-aliases>>
+  <<setup-completer>>
 }
 #+end_src
 
 Next , we fetch the list of valid git commands from the output of =git help -a=, and store the corresponding completion sequences in =$completions=. All of them are configured to produce  completions for their options, as extracted by the =-git-opts= function. Commands that have corresponding definitions in =$git-completions= get them, otherwise they get the generic filename completer.
 
 #+begin_src elvish :noweb-ref init-git-commands :tangle no
-  -run-git help -a --no-verbose | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
-    seq = [ $comp:files~ ... ]
-    if (has-key $git-completions $c) {
-      seq = $git-completions[$c]
-    }
-    if (eq (kind-of $seq) string) {
-      completions[$c] = $seq
-    } elif (eq (kind-of $seq) map) {
-      completions[$c] = (comp:subcommands $seq)
-    } else {
-      completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
-    }
+-run-git help -a --no-verbose | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
+  seq = [ $comp:files~ ... ]
+  if (has-key $git-completions $c) {
+    seq = $git-completions[$c]
   }
+  if (eq (kind-of $seq) string) {
+    completions[$c] = $seq
+  } elif (eq (kind-of $seq) map) {
+    completions[$c] = (comp:subcommands $seq)
+  } else {
+    completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
+  }
+}
 #+end_src
 
 Next, we parse the defined aliases from the output of =git config --list=. We store the aliases in =completions= as well, but we check if an alias points to another valid command. In this case, we store the name of the target command as its value, which =comp:expand= interprets as "use the completions from the target command". If an alias does not expand to another existing command, we set up its completions as empty.
 
 #+begin_src elvish :noweb-ref init-git-aliases :tangle no
-  -run-git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
-    alias target = $m[groups][1 2][text]
-    if (has-key $completions $target) {
-      completions[$alias] = $target
-    } else {
-      completions[$alias] = (comp:sequence [])
-    }
+-run-git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
+  alias target = $m[groups][1 2][text]
+  if (has-key $completions $target) {
+    completions[$alias] = $target
+  } else {
+    completions[$alias] = (comp:sequence [])
   }
+}
 #+end_src
 
 We setup the completer by assigning the function to the corresponding element of =$edit:completion:arg-completer=.
 
 #+begin_src elvish :noweb-ref setup-completer :tangle no
-  git-arg-completer = (comp:subcommands $completions ^
-    &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
-  )
-  edit:completion:arg-completer[git] = $git-arg-completer
+git-arg-completer = (comp:subcommands $completions ^
+  &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
+)
+edit:completion:arg-completer[git] = $git-arg-completer
 #+end_src
 
 We run =init= by default on load, although it can be re-run if you change any configuration variables (most notably =git:git-command=).
 
 #+begin_src elvish
-  init
+init
 #+end_src
 
 * Test suite
@@ -261,16 +270,16 @@ We run =init= by default on load, although it can be re-run if you change any co
 :END:
 
 #+begin_src elvish
-  use github.com/zzamboni/elvish-completions/git
-  use github.com/zzamboni/elvish-modules/test
+use github.com/zzamboni/elvish-completions/git
+use github.com/zzamboni/elvish-modules/test
 
-  cmds = ($git:git-arg-completer git '')
+cmds = ($git:git-arg-completer git '')
 
-  (test:set github.com/zzamboni/elvish-completions/git
-    (test:set "common top-level commands"
-      (test:check { has-value $cmds add })
-      (test:check { has-value $cmds checkout })
-      (test:check { has-value $cmds commit })
-    )
+(test:set github.com/zzamboni/elvish-completions/git
+  (test:set "common top-level commands"
+    (test:check { has-value $cmds add })
+    (test:check { has-value $cmds checkout })
+    (test:check { has-value $cmds commit })
   )
+)
 #+end_src

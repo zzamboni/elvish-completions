@@ -73,7 +73,7 @@ fn extract-opts [@cmd
 }
 
 fn -handler-arity [func]{
-  fnargs = [ (count $func[arg-names]) (not-eq $func[rest-arg] '') ]
+  fnargs = [ (count $func[arg-names]) (and (not-eq $func[rest-arg] '') (not-eq $func[rest-arg] -1))]
   if     (eq $fnargs [ 0 $false ]) { put no-args
   } elif (eq $fnargs [ 1 $false ]) { put one-arg
   } elif (eq $fnargs [ 0 $true  ]) { put rest-arg
@@ -130,7 +130,7 @@ final-handlers = [(
 )]
 
 edit:complete-getopt $cmd[1:] $final-opts $final-handlers
-}
+  }
 
 fn -expand-subcommands [def @cmd &opts=[]]{
 
@@ -149,11 +149,11 @@ if (and (not-eq $kw []) (not-eq $kw[1] (- $n 1))) {
     $def[$sc] (all $cmd[{$sc-pos}:])
   }
 
-} else {
-    top-def = [ { put $@subcommands } ]
-    -expand-sequence &opts=$opts $top-def $@cmd
-  }
-}
+      } else {
+        top-def = [ { put $@subcommands } ]
+        -expand-sequence &opts=$opts $top-def $@cmd
+      }
+    }
 
 fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
   put [@cmd]{
