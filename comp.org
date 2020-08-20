@@ -378,14 +378,14 @@ If =&fold= is =$true=, then the input is preprocessed to join option description
 Determine the arity of a function and return a string representation, for internal use.
 
 #+begin_src elvish
-  fn -handler-arity [func]{
-    fnargs = [ (count $func[arg-names]) (not-eq $func[rest-arg] '') ]
-    if     (eq $fnargs [ 0 $false ]) { put no-args
-    } elif (eq $fnargs [ 1 $false ]) { put one-arg
-    } elif (eq $fnargs [ 0 $true  ]) { put rest-arg
-    } else {                           put other-args
-    }
+fn -handler-arity [func]{
+  fnargs = [ (count $func[arg-names]) (and (not-eq $func[rest-arg] '') (not-eq $func[rest-arg] -1))]
+  if     (eq $fnargs [ 0 $false ]) { put no-args
+  } elif (eq $fnargs [ 1 $false ]) { put one-arg
+  } elif (eq $fnargs [ 0 $true  ]) { put rest-arg
+  } else {                           put other-args
   }
+}
 #+end_src
 
 ** Completion functions
