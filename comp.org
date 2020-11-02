@@ -5,7 +5,7 @@
 #+name: module-summary
 A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. Used to implement most other modules in this repository. For a getting-started tutorial, see http://zzamboni.org/post/using-and-writing-completions-in-elvish/.
 
-This file is written in [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][literate programming style]], to make it easy to explain. See [[file:comp.elv][comp.elv]] for the generated file.
+This file is written in [[https://leanpub.com/lit-config][literate programming style]], to make it easy to explain. See [[file:comp.elv][comp.elv]] for the generated file.
 
 * Table of Contents                                          :TOC_3:noexport:
 - [[#usage][Usage]]
