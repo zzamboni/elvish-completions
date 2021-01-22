@@ -19,14 +19,14 @@ This file is written in [[https://leanpub.com/lit-config][literate programming s
 Install the =elvish-modules= package using [[https://elvish.io/ref/epm.html][epm]]:
 
 #+begin_src elvish
-  use epm
-  epm:install github.com/zzamboni/elvish-completions
+use epm
+epm:install github.com/zzamboni/elvish-completions
 #+end_src
 
 In your =rc.elv=, load this module:
 
 #+begin_src elvish
-  use github.com/zzamboni/elvish-completions/builtins
+use github.com/zzamboni/elvish-completions/builtins
 #+end_src
 
 Included completions:
@@ -64,9 +64,9 @@ Included completions:
 Load the completion framework and other libraries.
 
 #+begin_src elvish
-  use ./comp
-  use re
-  use path
+use ./comp
+use re
+use path
 #+end_src
 
 ** use
@@ -74,14 +74,14 @@ Load the completion framework and other libraries.
 Completer for the =use= command, which includes all modules in =~/.elvish/lib/=.
 
 #+begin_src elvish
-  edit:completion:arg-completer[use] = (comp:sequence [{
+edit:completion:arg-completer[use] = (comp:sequence [{
       put ~/.elvish/lib/**[nomatch-ok].elv | each [m]{
         if (not (path:is-dir $m)) {
           re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
         }
       }
-    }]
-  )
+  }]
+)
 #+end_src
 
 ** epm
@@ -89,15 +89,15 @@ Completer for the =use= command, which includes all modules in =~/.elvish/lib/=.
 Completers for the =epm= commands.
 
 #+begin_src elvish
-  use epm
+use epm
 
-  epm-completer-one  = (comp:sequence [ $epm:list~ ])
-  epm-completer-many = (comp:sequence [ $epm:list~ ...])
-  edit:completion:arg-completer[epm:query]     = $epm-completer-one
-  edit:completion:arg-completer[epm:metadata]  = $epm-completer-one
-  edit:completion:arg-completer[epm:dest]      = $epm-completer-one
-  edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
-  edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
+epm-completer-one  = (comp:sequence [ $epm:list~ ])
+epm-completer-many = (comp:sequence [ $epm:list~ ...])
+edit:completion:arg-completer[epm:query]     = $epm-completer-one
+edit:completion:arg-completer[epm:metadata]  = $epm-completer-one
+edit:completion:arg-completer[epm:dest]      = $epm-completer-one
+edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
+edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
 #+end_src
 
 ** elvish
@@ -105,8 +105,8 @@ Completers for the =epm= commands.
 Completer for the =elvish= command.
 
 #+begin_src elvish
-  edit:completion:arg-completer[elvish] = (comp:sequence ^
-    &opts= { elvish -help | comp:extract-opts &fold } ^
-    [ [arg]{ comp:files $arg &regex='\.elv$' } ] ^
-  )
+edit:completion:arg-completer[elvish] = (comp:sequence ^
+  &opts= { elvish -help | comp:extract-opts &fold } ^
+  [ [arg]{ comp:files $arg &regex='\.elv$' } ] ^
+)
 #+end_src

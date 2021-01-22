@@ -18,20 +18,20 @@ This file is written in [[https://leanpub.com/lit-config][literate programming s
 Install the =elvish-completions= package using [[https://elvish.io/ref/epm.html][epm]]:
 
 #+begin_src elvish
-  use epm
-  epm:install github.com/zzamboni/elvish-completions
+use epm
+epm:install github.com/zzamboni/elvish-completions
 #+end_src
 
 In your =rc.elv=, load this module:
 
 #+begin_src elvish
-  use github.com/zzamboni/elvish-completions/ssh
+use github.com/zzamboni/elvish-completions/ssh
 #+end_src
 
 Hosts for the completions will be read from the files listed in the =$config-files= variable. Here is its default value:
 
 #+begin_src elvish :noweb-ref config-files
-  config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
+config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
 #+end_src
 
 All hosts listed in =Host= sections of the config files will be provided for completion. Patterns including any metacharacters (=*=, =?= and =!=) will not be shown.
@@ -64,15 +64,15 @@ Completions are also provided for config options. If you type =-o<space>=  and p
 We first load a number of libraries, including =comp=, the Elvish [[file:comp.org][completion framework]].
 
 #+begin_src elvish
-  use ./comp
-  use re
-  use str
+use ./comp
+use re
+use str
 #+end_src
 
 List of config files from which to extract hostnames.
 
 #+begin_src elvish :noweb yes
-  <<config-files>>
+<<config-files>>
 #+end_src
 
 ** Initialization
@@ -80,33 +80,33 @@ List of config files from which to extract hostnames.
 The =-ssh-hosts= function extracts all hostnames from the files listed in =$config-files=. Nonexistent files in the list are ignored, and only hostnames which do not include glob characters (=*=, =?=, =!=) are returned.
 
 #+begin_src elvish
-  fn -ssh-hosts {
-    hosts = [&]
-    all $config-files | each [file]{
-      _ = ?(cat $file 2>&-) | eawk [_ @f]{
-        if (re:match '^(?i)host$' $f[0]) {
-          all $f[1:] | each [p]{
-            if (not (re:match '[*?!]' $p)) {
-              hosts[$p] = $true
-    }}}}}
-    keys $hosts
-  }
+fn -ssh-hosts {
+  hosts = [&]
+  all $config-files | each [file]{
+    _ = ?(cat $file 2>&-) | eawk [_ @f]{
+      if (re:match '^(?i)host$' $f[0]) {
+        all $f[1:] | each [p]{
+          if (not (re:match '[*?!]' $p)) {
+            hosts[$p] = $true
+  }}}}}
+  keys $hosts
+}
 #+end_src
 
 We store in =-ssh-options= all the possible configuration options, by parsing them directly from the =ssh_config= man page (if available). These are initialized by the =-gen-ssh-options= on first use to reduce load time, and cached so that any delay is only incurred once.
 
 #+begin_src elvish
-  -ssh-options = []
-  fn -gen-ssh-options {
-    if (eq $-ssh-options []) {
-      -ssh-options = [(
-          _ = ?(cat (man -w ssh_config 2>&-)) |
-          eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } } |
-          comp:decorate &suffix='='
-      )]
-    }
-    all $-ssh-options
+-ssh-options = []
+fn -gen-ssh-options {
+  if (eq $-ssh-options []) {
+    -ssh-options = [(
+        _ = ?(cat (man -w ssh_config 2>&-)) |
+        eawk [l @f]{ if (re:match '^\.It Cm' $l) { put $f[2] } } |
+        comp:decorate &suffix='='
+    )]
   }
+  all $-ssh-options
+}
 #+end_src
 
 The =$ssh-opts= array stores the definitions of command-line options. For now we only complete:
@@ -115,38 +115,38 @@ The =$ssh-opts= array stores the definitions of command-line options. For now we
 - =-i/--inventory= generated with =comp:files= defined in =comp.elv=
 
 #+begin_src elvish
-  ssh-opts = [
-    [ &short= o
-      &arg-required= $true
-      &arg-completer= $-gen-ssh-options~
-    ]
-    [ &short= i
-      &long= inventory
-      &arg-required= $true
-      &arg-completer= $comp:files~
-    ]
+ssh-opts = [
+  [ &short= o
+    &arg-required= $true
+    &arg-completer= $-gen-ssh-options~
   ]
+  [ &short= i
+    &long= inventory
+    &arg-required= $true
+    &arg-completer= $comp:files~
+  ]
+]
 #+end_src
 
 =-ssh-host-completions= dynamically generates the completion definition for hostnames for ssh-related commands. The hostnames are extracted from the user's ssh config files by the =-ssh-hosts= function defined above. The completions for =ssh= and =scp=, for example, are the same except for the suffix that needs to be added to the hostnames in the completion, so we allow the suffix to be specified as an option. We also allow for a username to be specified at the beginning of the hostname (=user@=), and still generate the completions correctly, so you can type =ssh user@abc<Tab>= and the corresponding hostnames will be completed.
 
 #+begin_src elvish
-  fn -ssh-host-completions [arg &suffix='']{
-    user-given = (str:join '' [(re:find '^(.*@)' $arg)[groups][1][text]])
-    -ssh-hosts | each [host]{ put $user-given$host } | comp:decorate &suffix=$suffix
-  }
+fn -ssh-host-completions [arg &suffix='']{
+  user-given = (str:join '' [(re:find '^(.*@)' $arg)[groups][1][text]])
+  -ssh-hosts | each [host]{ put $user-given$host } | comp:decorate &suffix=$suffix
+}
 #+end_src
 
 We use =-ssh-host-completions= to produce the actual completion definitions for =ssh=, =sftp= and =scp=. For =scp= we also complete local filenames.
 
 #+begin_src elvish
-  edit:completion:arg-completer[ssh]  = (comp:sequence &opts=$ssh-opts [$-ssh-host-completions~])
-  edit:completion:arg-completer[sftp] = (comp:sequence &opts=$ssh-opts [$-ssh-host-completions~])
-  edit:completion:arg-completer[scp]  = (comp:sequence &opts=$ssh-opts [
-      [arg]{
-        -ssh-host-completions &suffix=":" $arg
-        edit:complete-filename $arg
-      }
-      ...
-  ])
+edit:completion:arg-completer[ssh]  = (comp:sequence &opts=$ssh-opts [$-ssh-host-completions~])
+edit:completion:arg-completer[sftp] = (comp:sequence &opts=$ssh-opts [$-ssh-host-completions~])
+edit:completion:arg-completer[scp]  = (comp:sequence &opts=$ssh-opts [
+    [arg]{
+      -ssh-host-completions &suffix=":" $arg
+      edit:complete-filename $arg
+    }
+    ...
+])
 #+end_src
