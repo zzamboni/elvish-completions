@@ -87,7 +87,7 @@ The base building block is the "item", can be one of the following:
 In this case, we define a function which receives the current "stem" (the part of the filename the user has typed so far) and offers all the relevant files, then filters those which are directories, and returns them as completion possibilities. We pass the function directly as a completion item to =comp:-expand=.
 
 #+begin_src elvish
-fn complete-dirs [arg]{ put {$arg}* | each [x]{ if (-is-dir $x) { put $x } } }
+fn complete-dirs [arg]{ put {$arg}* | each [x]{ if (path:is-dir $x) { put $x } } }
 edit:completion:arg-completer[cd] = (comp:item $complete-dirs~)
 #+end_src
 
@@ -267,6 +267,7 @@ We start by loading some basic modules we need.
 
 #+begin_src elvish
 use re
+use path
 use github.com/zzamboni/elvish-modules/util
 #+end_src
 
@@ -308,7 +309,7 @@ fn empty { nop }
 fn files [arg &regex='' &dirs-only=$false]{
   edit:complete-filename $arg | each [c]{
     x = $c[stem]
-    if (or (-is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
+    if (or (path:is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
       put $c
     }
   }
@@ -465,7 +466,7 @@ final-handlers = [(
 Finally, we call =edit:complete-getopt= with the corresponding data structures. It expects the current line /without/ the initial command, so we remove that as well.
 
 #+begin_src elvish
-edit:complete-getopt $cmd[1:] $final-opts $final-handlers
+edit:complete-getopt $cmd[1..] $final-opts $final-handlers
   }
 #+end_src
 
@@ -496,7 +497,7 @@ if (and (not-eq $kw []) (not-eq $kw[1] (- $n 1))) {
     cmd[$sc-pos] = $def[$sc]
     -expand-subcommands &opts=$opts $def $@cmd
   } else {
-    $def[$sc] (all $cmd[{$sc-pos}:])
+    $def[$sc] (all $cmd[{$sc-pos}..])
   }
    #+end_src
 

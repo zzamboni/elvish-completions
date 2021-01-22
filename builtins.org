@@ -66,6 +66,7 @@ Load the completion framework and other libraries.
 #+begin_src elvish
   use ./comp
   use re
+  use path
 #+end_src
 
 ** use
@@ -75,7 +76,7 @@ Completer for the =use= command, which includes all modules in =~/.elvish/lib/=.
 #+begin_src elvish
   edit:completion:arg-completer[use] = (comp:sequence [{
       put ~/.elvish/lib/**[nomatch-ok].elv | each [m]{
-        if (not (-is-dir $m)) {
+        if (not (path:is-dir $m)) {
           re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
         }
       }

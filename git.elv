@@ -28,7 +28,7 @@ fn -run-git [@rest]{
   if (eq (kind-of $cmd) string) {
     cmd = (external $cmd)
   }
-  $cmd (all $gitcmds[1:]) $@rest
+  $cmd (all $gitcmds[1..]) $@rest
 }
 
 fn -git-opts [@cmd]{
