@@ -1,7 +1,7 @@
 use str
 
 fn -comma-sep-list [options arg]{
-  prefix = $arg[:(+ 1 (str:last-index $arg ','))]
+  prefix = $arg[..(+ 1 (str:last-index $arg ','))]
   for option [(keys $options)] {
     edit:complex-candidate &display=$options[$option] $prefix$option
   }
@@ -69,20 +69,22 @@ fn -completer [@cmd]{
   last-arg = $cmd[-1]
   op-length = (str:index $last-arg '=')
 
-  if (== -1 $op-length) {
-    for op [(keys $-operands)] {
-      edit:complex-candidate &display=$op'=  ('$-operands[$op][desc]')' &code-suffix='=' $op
-    }
+if (== -1 $op-length) {
+  for op [(keys $-operands)] {
+    edit:complex-candidate &display=$op'=  ('$-operands[$op][desc]')' &code-suffix='=' $op
+  }
 
-    edit:complex-candidate &display="--help  (display help and exit)" '--help'
-    edit:complex-candidate &display="--version  (output version information and exit)" '--version'
-  } else {
-    op = $last-arg[:$op-length]
-    arg = $last-arg[(+ 1 $op-length):]
+  edit:complex-candidate &display="--help  (display help and exit)" '--help'
+  edit:complex-candidate &display="--version  (output version information and exit)" '--version'
 
-    if (has-key $-operands[$op] comp) {
-      $-operands[$op][comp] $arg | each [candidate]{
-        if (eq (kind-of $candidate) map) {
+} else {
+  op = $last-arg[..$op-length]
+  arg = $last-arg[(+ 1 $op-length)..]
+
+  if (has-key $-operands[$op] comp) {
+    $-operands[$op][comp] $arg | each [candidate]{
+
+if (eq (kind-of $candidate) map) {
           put (edit:complex-candidate $op'='$candidate[stem] &display=$candidate[display])
         } else {
           put $op'='$candidate

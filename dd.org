@@ -15,7 +15,7 @@ Conversions and flags are both specified as comma-separated lists, so let's have
 use str
 
 fn -comma-sep-list [options arg]{
-  prefix = $arg[:(+ 1 (str:last-index $arg ','))]
+  prefix = $arg[..(+ 1 (str:last-index $arg ','))]
   for option [(keys $options)] {
     edit:complex-candidate &display=$options[$option] $prefix$option
   }
@@ -112,8 +112,8 @@ Otherwise, we lop off the operand and its ~=~, so that we can use nice simple co
 
 #+begin_src elvish
   } else {
-    op = $last-arg[:$op-length]
-    arg = $last-arg[(+ 1 $op-length):]
+    op = $last-arg[..$op-length]
+    arg = $last-arg[(+ 1 $op-length)..]
 
     if (has-key $-operands[$op] comp) {
       $-operands[$op][comp] $arg | each [candidate]{
