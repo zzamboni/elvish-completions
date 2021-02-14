@@ -9,7 +9,7 @@ fn -ssh-hosts {
   all $config-files | each [file]{
     _ = ?(cat $file 2>&-) | eawk [_ @f]{
       if (re:match '^(?i)host$' $f[0]) {
-        all $f[1:] | each [p]{
+        all $f[1..] | each [p]{
           if (not (re:match '[*?!]' $p)) {
             hosts[$p] = $true
   }}}}}
