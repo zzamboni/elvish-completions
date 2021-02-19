@@ -1,10 +1,14 @@
-# Created 2021-01-19 Tue 21:53
+# Created 2021-02-19 Fri 18:35
 #+TITLE: Elvish completions
 #+AUTHOR: Diego Zamboni
 #+macro: module-summary (eval (org-export-string-as (concat "- [[file:" $1 ".org][" $1 "]] :: \n  #+include: " $1 ".org::module-summary\n") 'org t))
 #+export_file_name: README.org
 
 This Elvish package contains various completions I and others have written for the [[https://elv.sh/][Elvish shell]].
+
+* Compatibility
+
+These modules are only guaranteed to be fully compatible with [[https://elv.sh/get/][Elvish HEAD]], which is what I use. This means that occasionally, they will not work even with the latest official release, when breaking changes are introduced. Since Elvish is in active development, I highly recommend you use the latest commit too.
 
 * Installation and use
 
