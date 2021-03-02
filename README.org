@@ -1,4 +1,4 @@
-# Created 2021-02-19 Fri 18:35
+# Created 2021-03-02 Tue 16:37
 #+TITLE: Elvish completions
 #+AUTHOR: Diego Zamboni
 #+macro: module-summary (eval (org-export-string-as (concat "- [[file:" $1 ".org][" $1 "]] :: \n  #+include: " $1 ".org::module-summary\n") 'org t))
@@ -31,10 +31,8 @@ See each module's page for detailed usage instructions.
 
 The following modules are included:
 
-- [[file:comp.org][comp]] :: 
-     #+name: module-summary
-     A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. Used to implement most other modules in this repository. For a getting-started tutorial, see http://zzamboni.org/post/using-and-writing-completions-in-elvish/.
-
+#+results: 
+:results:
 - [[file:builtins.org][builtins]] :: 
      #+name: module-summary
      Completions for some of Elvish's built-in commands, including =use=, the =epm= module and =elvish= itself.
@@ -42,6 +40,10 @@ The following modules are included:
 - [[file:cd.org][cd]] :: 
      #+name: module-summary
      Completes directory names for the =cd= command.
+
+- [[file:comp.org][comp]] :: 
+     #+name: module-summary
+     A framework to easily define  [[https://elvish.io/ref/edit.html#completion-api][argument completers]] in Elvish. Used to implement most other modules in this repository. For a getting-started tutorial, see http://zzamboni.org/post/using-and-writing-completions-in-elvish/.
 
 - [[file:dd.org][dd]] :: 
      #+name: module-summary
@@ -58,3 +60,4 @@ The following modules are included:
 - [[file:vcsh.org][vcsh]] :: 
      #+name: module-summary
      Completions for [[https://github.com/RichiH/vcsh][vcsh]].
+:END:
