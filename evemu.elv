@@ -59,6 +59,7 @@ edit:completion:arg-completer[evemu-describe] = $-record-and-describe-comp
 edit:completion:arg-completer[evemu-record] = $-record-and-describe-comp
 
 edit:completion:arg-completer[evemu-device] = $edit:complete-filename~
+
 edit:completion:arg-completer[evemu-play] = (comp:sequence [[arg]{
   $-complete-dev
   comp:files $arg
