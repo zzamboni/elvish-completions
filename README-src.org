@@ -30,16 +30,19 @@ See each module's page for detailed usage instructions.
 
 The following modules are included:
 
-#+begin_src elvish :exports results :results drawer :eval export
+#+begin_src elvish :exports results :results drawer :eval no-export
+echo "" # blank lines prevents github rendering error in which the first item is now shown
 ls *.org | egrep -v 'README|_template' | each [m]{ echo "{{{module-summary("(basename $m .org)")}}}" }
 #+end_src
 
 #+RESULTS:
 :results:
+
 {{{module-summary(builtins)}}}
 {{{module-summary(cd)}}}
 {{{module-summary(comp)}}}
 {{{module-summary(dd)}}}
+{{{module-summary(evemu)}}}
 {{{module-summary(git)}}}
 {{{module-summary(ssh)}}}
 {{{module-summary(vcsh)}}}

@@ -1,4 +1,4 @@
-# Created 2021-03-02 Tue 16:37
+# Created 2021-03-29 Mon 10:26
 #+TITLE: Elvish completions
 #+AUTHOR: Diego Zamboni
 #+macro: module-summary (eval (org-export-string-as (concat "- [[file:" $1 ".org][" $1 "]] :: \n  #+include: " $1 ".org::module-summary\n") 'org t))
@@ -33,6 +33,8 @@ The following modules are included:
 
 #+results: 
 :results:
+
+
 - [[file:builtins.org][builtins]] :: 
      #+name: module-summary
      Completions for some of Elvish's built-in commands, including =use=, the =epm= module and =elvish= itself.
@@ -48,6 +50,10 @@ The following modules are included:
 - [[file:dd.org][dd]] :: 
      #+name: module-summary
      Completions for =dd=, including operands, conversions, and flags.
+
+- [[file:evemu.org][evemu]] :: 
+     #+name: module-summary
+     Completions for [[https://gitlab.freedesktop.org/libevdev/evtest][=evtest=]] and the [[https://www.freedesktop.org/wiki/Evemu/][=evemu=]] set of tools, which assist in debugging and emulating the [[https://www.kernel.org/doc/html/latest/input/input_uapi.html][Linux input subsystem]].
 
 - [[file:git.org][git]] :: 
      #+name: module-summary
