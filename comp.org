@@ -257,6 +257,19 @@ brew-completions = [
 edit:completion:arg-completer[brew] = (comp:subcommands &opts= [ version ] $brew-completions)
 #+end_src
 
+=comp:files= completes filenames, using any prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&dirs-only= is =$true=, only directories are returned. If =&transform= is given, it must be a one-argument lambda that is used to transform completions. It receives a string for each one of the available completions, and it must produce as output the transformed completion.
+
+*Example #9*: a completer for the Elvish =use= command, which completes libraries and directories within the =~/.elvish/lib/= directory, removing the leading directory name and the =.elv= extension from the files, since they are not needed in the arguments:
+
+#+begin_src elvish
+edit:completion:arg-completer[use] = (comp:sequence [
+    [stem]{
+      comp:files ~/.elvish/lib/$stem &regex='.*\.elv' ^
+        &transform=[m]{  re:replace ~/.elvish/lib/'(.*)(.elv)?' '$1' $m }
+    }
+  ])
+#+end_src
+
 * Implementation
 :PROPERTIES:
 :header-args:elvish: :tangle (concat (file-name-sans-extension (buffer-file-name)) ".elv")
