@@ -1,14 +1,25 @@
 use ./comp
 use re
 use path
+use str
 
-edit:completion:arg-completer[use] = (comp:sequence [{
-      put ~/.elvish/lib/**[nomatch-ok].elv | each [m]{
-        if (not (path:is-dir $m)) {
-          re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
+edit:completion:arg-completer[use] = (
+  comp:sequence [
+    [stem]{
+      if (not (str:has-prefix $stem '.')) {
+        put './' '../'
+        put ~/.elvish/lib/**[nomatch-ok].elv | each [m]{
+          if (not (path:is-dir $m)) {
+            re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
+          }
         }
+      } else {
+        if (eq $stem ".") { stem = "./" }
+        if (eq $stem "..") { stem = "../" }
+        comp:files $stem &regex='.*\.elv' &transform=[s]{ re:replace '\.elv$' '' $s }
       }
-  }]
+    }
+  ]
 )
 
 use epm
