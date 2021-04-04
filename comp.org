@@ -259,6 +259,8 @@ edit:completion:arg-completer[brew] = (comp:subcommands &opts= [ version ] $brew
 
 =comp:files= completes filenames, using any prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&dirs-only= is =$true=, only directories are returned. If =&transform= is given, it must be a one-argument lambda that is used to transform completions. It receives a string for each one of the available completions, and it must produce as output the transformed completion.
 
+=comp:dirs= is simply a convenience wrapper around =comp:files= which sets =&dirs-only= automatically.
+
 *Example #9*: a completer for the Elvish =use= command, which completes libraries and directories within the =~/.elvish/lib/= directory, removing the leading directory name and the =.elv= extension from the files, since they are not needed in the arguments:
 
 #+begin_src elvish
@@ -339,8 +341,8 @@ fn files [arg &regex='' &dirs-only=$false &transform=$nil]{
 =comp:dirs= is simply a convenience wrapper around =comp:files= which sets =&dirs-only= automatically.
 
 #+begin_src elvish
-fn dirs [arg &regex='']{
-  files $arg &regex=$regex &dirs-only=$true
+fn dirs [arg &regex='' &transform=$nil]{
+  files $arg &regex=$regex &dirs-only=$true &transform=$transform
 }
 #+end_src
 

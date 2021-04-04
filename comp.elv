@@ -31,8 +31,8 @@ fn files [arg &regex='' &dirs-only=$false &transform=$nil]{
   }
 }
 
-fn dirs [arg &regex='']{
-  files $arg &regex=$regex &dirs-only=$true
+fn dirs [arg &regex='' &transform=$nil]{
+  files $arg &regex=$regex &dirs-only=$true &transform=$transform
 }
 
 fn extract-opts [@cmd
