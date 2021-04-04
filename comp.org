@@ -34,7 +34,7 @@ This file is written in [[https://leanpub.com/lit-config][literate programming s
 
 The =comp= module provides a few functions that make it easier to define completions in Elvish. Please note that this module is not intended for direct use in an Elvish session, but to write your own [[https://elvish.io/ref/edit.html#completion-api][argument completers]].
 
-*NOTE: This module is very much in development, so the API, data structures, etc. may change at any moment.*
+*NOTE: This module is in development, so the API, data structures, etc. may change at any moment.*
 
 As a first step, install the =elvish-completions= package using [[https://elvish.io/ref/epm.html][epm]]:
 
@@ -93,7 +93,7 @@ edit:completion:arg-completer[cd] = (comp:item $complete-dirs~)
 
 I defined the =complete-dirs= function separately only for clarity - you can also embed the lambda directly as an argument to =comp:item=.
 
-For file and directory completion, you can use the utility function =comp:files= instead of defining your own function (see [[*Utility functions][Utility functions]]):
+For file and directory completion, you can use the utility function =comp:files= instead of defining your own function (see [[#comp-files-and-comp-dirs][comp:files and comp:dirs]]):
 
 #+begin_src elvish
 edit:completion:arg-completer[cd] = (comp:item [arg]{ comp:files $arg &dirs-only })
@@ -302,15 +302,22 @@ fn empty { nop }
 #+end_src
 
 *** comp:files and comp:dirs
+:PROPERTIES:
+:CUSTOM_ID: comp-files-and-comp-dirs
+:END:
 
-=comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&dirs-only= is =$true=, only directories are returned.
+=comp:files= completes filenames, using any typed prefix as the stem. If the =&regex= option is specified, only files matching that pattern are completed. If =&dirs-only= is =$true=, only directories are returned. If =&transform= is given, it must be a one-argument lambda that is used to transform completions. It receives a string for each one of the available completions, and it must produce as output the transformed completion.
 
 #+begin_src elvish
-fn files [arg &regex='' &dirs-only=$false]{
+fn files [arg &regex='' &dirs-only=$false &transform=$nil]{
   edit:complete-filename $arg | each [c]{
     x = $c[stem]
     if (or (path:is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
-      put $c
+      if $transform {
+        edit:complex-candidate ($transform $x)
+      } else {
+        put $c
+      }
     }
   }
 }

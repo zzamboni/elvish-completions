@@ -18,11 +18,15 @@ fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
 
 fn empty { nop }
 
-fn files [arg &regex='' &dirs-only=$false]{
+fn files [arg &regex='' &dirs-only=$false &transform=$nil]{
   edit:complete-filename $arg | each [c]{
     x = $c[stem]
     if (or (path:is-dir $x) (and (not $dirs-only) (or (eq $regex '') (re:match $regex $x)))) {
-      put $c
+      if $transform {
+        edit:complex-candidate ($transform $x)
+      } else {
+        put $c
+      }
     }
   }
 }
@@ -150,11 +154,11 @@ if (and (not-eq $kw []) (not-eq $kw[1] (- $n 1))) {
     $def[$sc] (all $cmd[{$sc-pos}..])
   }
 
-      } else {
-        top-def = [ { put $@subcommands } ]
-        -expand-sequence &opts=$opts $top-def $@cmd
-      }
-    }
+} else {
+    top-def = [ { put $@subcommands } ]
+    -expand-sequence &opts=$opts $top-def $@cmd
+  }
+}
 
 fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
   put [@cmd]{
