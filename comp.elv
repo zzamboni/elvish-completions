@@ -78,7 +78,7 @@ fn extract-opts [@cmd
 }
 
 fn -handler-arity [func]{
-  fnargs = [ (count $func[arg-names]) (and (not-eq $func[rest-arg] '') (not-eq $func[rest-arg] -1))]
+  fnargs = [ (to-string (count $func[arg-names])) (and (not-eq $func[rest-arg] '') (not-eq $func[rest-arg] -1))]
   if     (eq $fnargs [ 0 $false ]) { put no-args
   } elif (eq $fnargs [ 1 $false ]) { put one-arg
   } elif (eq $fnargs [ 0 $true  ]) { put rest-arg
