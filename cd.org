@@ -8,9 +8,9 @@
 Completes directory names for the =cd= command.
 
 #+begin_src elvish
-  use ./comp
+use ./comp
 
-  edit:completion:arg-completer[cd] = (comp:sequence [[stem]{
+edit:completion:arg-completer[cd] = (comp:sequence [ [stem]{
       comp:files $stem &dirs-only
-    }])
+}])
 #+end_src
