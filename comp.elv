@@ -4,7 +4,7 @@ use github.com/zzamboni/elvish-modules/util
 
 fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
   # &style is currently ignored because it is not supported by Elvish
-  if (eq (count $input) 0) {
+  if (== (count $input) 0) {
     input = [(all)]
   }
   if (not-eq $suffix '') {
