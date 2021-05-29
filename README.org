@@ -12,7 +12,7 @@ These modules are only guaranteed to be fully compatible with [[https://elv.sh/g
 
 * Installation and use
 
-To install, use [[https://elvish.io/ref/epm.html][epm]]:
+To install, use [[https://elv.sh/ref/epm.html][epm]]:
 
 #+begin_src elvish
   use epm
