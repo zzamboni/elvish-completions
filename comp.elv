@@ -1,6 +1,14 @@
 use re
+use str
 use path
-use github.com/zzamboni/elvish-modules/util
+
+debug = $false
+
+fn -debugmsg [@args &color=blue]{
+  if $debug {
+    echo (styled (echo ">>> " $@args) $color) >/dev/tty
+  }
+}
 
 fn decorate [@input &code-suffix='' &display-suffix='' &suffix='' &style='']{
   # &style is currently ignored because it is not supported by Elvish
@@ -39,32 +47,45 @@ fn extract-opts [@cmd
   &regex='^\s*(?:-(\w),?\s*)?(?:--?([\w-]+))?(?:\[=(\S+)\]|[ =](\S+))?\s*?\s\s(\w.*)$'
   &regex-map=[&short=1 &long=2 &arg-optional=3 &arg-required=4 &desc=5]
   &fold=$false
+  &first-sentence=$false
+  &opt-completers=[&]
 ]{
   -line = ''
   capture = $all~
   if $fold {
     capture = { each [l]{
-        if (re:match '^\s+\w' $l) {
-          put $-line$l
+        if (re:match '^\s{8,}\w' $l) {
+          var folded = $-line$l
+          # -debugmsg "Folded line: "$folded
+          put $folded
           -line = ''
         } else {
+          # -debugmsg "Non-folded line: "$-line
           put $-line
           -line = $l
         }
       }
     }
   }
-  $capture | each [l]{ re:find $regex $l } | each [m]{
+  $capture | each [l]{
+    -debugmsg "Got line: "$l
+    re:find $regex $l
+  } | each [m]{
+    -debugmsg "Matches: "(to-string $m) &color=red
     g = $m[groups]
     opt = [&]
     keys $regex-map | each [k]{
       if (has-key $g $regex-map[$k]) {
-        field = $g[$regex-map[$k]][text]
+        field = (str:trim-space $g[$regex-map[$k]][text])
         if (not-eq $field '') {
           if (has-value [arg-optional arg-required] $k) {
             opt[$k] = $true
             opt[arg-desc] = $field
-            opt[completer] = $files~
+            if (has-key $opt-completers $field) {
+              opt[arg-completer] = $opt-completers[$field]
+            } else {
+              opt[arg-completer] = $edit:complete-filename~
+            }
           } else {
             opt[$k] = $field
           }
@@ -72,16 +93,20 @@ fn extract-opts [@cmd
       }
     }
     if (or (has-key $opt short) (has-key $opt long)) {
+      if (and (has-key $opt desc) $first-sentence) {
+        opt[desc] = (re:replace '\. .*$|\.\s*$|\s*\(.*$' '' $opt[desc])
+      }
+      opt[desc] = (re:replace '\s+' ' ' $opt[desc])
       put $opt
     }
   }
 }
 
 fn -handler-arity [func]{
-  fnargs = [ (to-string (count $func[arg-names])) (and (not-eq $func[rest-arg] '') (not-eq $func[rest-arg] -1))]
-  if     (eq $fnargs [ 0 $false ]) { put no-args
-  } elif (eq $fnargs [ 1 $false ]) { put one-arg
-  } elif (eq $fnargs [ 0 $true  ]) { put rest-arg
+  fnargs = [ (to-string (count $func[arg-names])) (== $func[rest-arg] -1)]
+  if     (eq $fnargs [ 0 $true ])  { put no-args
+  } elif (eq $fnargs [ 1 $true ])  { put one-arg
+  } elif (eq $fnargs [ 1 $false ]) { put rest-arg
   } else {                           put other-args
   }
 }
@@ -93,7 +118,7 @@ fn -expand-item [def @cmd]{
     [ &no-args=  { $def }
       &one-arg=  { $def $arg }
       &rest-arg= { $def $@cmd }
-      &other-args= { put '<completion-fn-arity-error>' }
+      &other-args= { put '<expand-item-completion-fn-arity-error>' }
     ][(-handler-arity $def)]
   } elif (eq $what 'list') {
     all $def
@@ -106,10 +131,13 @@ fn -expand-sequence [seq @cmd &opts=[]]{
 
 final-opts = [(
     -expand-item $opts $@cmd | each [opt]{
+      -debugmsg "In final-opts: opt before="(to-string $opt) &color=yellow
       if (eq (kind-of $opt) map) {
         if (has-key $opt arg-completer) {
+          -debugmsg &color=yellow "Assigning opt[completer] = [_]{ -expand-item "(to-string $opt[arg-completer]) $@cmd "}" 
           opt[completer] = [_]{ -expand-item $opt[arg-completer] $@cmd }
         }
+        -debugmsg "In final-opts: opt after="(to-string $opt) &color=yellow
         put $opt
       } else {
         put [&long= $opt]
@@ -124,7 +152,7 @@ final-handlers = [(
           &no-args=  [_]{ $f }
           &one-arg=  $f
           &rest-arg= [_]{ $f $@cmd }
-          &other-args= [_]{ put '<completion-fn-arity-error>' }
+          &other-args= [_]{ put '<expand-sequence-completion-fn-arity-error>' }
         ][(-handler-arity $f)]
       } elif (eq (kind-of $f) 'list') {
         put [_]{ all $f }
@@ -134,8 +162,9 @@ final-handlers = [(
     }
 )]
 
+-debugmsg Calling: edit:complete-getopt (to-string $cmd[1..]) (to-string $final-opts) (to-string $final-handlers)
 edit:complete-getopt $cmd[1..] $final-opts $final-handlers
-  }
+}
 
 fn -expand-subcommands [def @cmd &opts=[]]{
 
@@ -170,19 +199,33 @@ fn item [item &pre-hook=$nop~ &post-hook=$nop~]{
 }
 
 fn sequence [sequence &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-  put [@cmd]{
-    $pre-hook $@cmd
-    result = [(-expand-sequence &opts=$opts $sequence $@cmd)]
-    $post-hook $result $@cmd
-    put $@result
+  put [@cmd &inspect=$false]{
+    if $inspect {
+      echo "comp:sequence definition: "(to-string $sequence)
+      echo "opts: "(to-string $opts)
+    } else {
+      $pre-hook $@cmd
+      result = [(-expand-sequence &opts=$opts $sequence $@cmd)]
+      $post-hook $result $@cmd
+      put $@result
+    }
   }
 }
 
 fn subcommands [def &opts=[] &pre-hook=$nop~ &post-hook=$nop~]{
-  put [@cmd]{
-    $pre-hook $@cmd
-    result = [(-expand-subcommands &opts=$opts $def $@cmd)]
-    $post-hook $result $@cmd
-    put $@result
+  put [@cmd &inspect=$false]{
+    if $inspect {
+      echo "Completer definition: "(to-string $def)
+      echo "opts: "(to-string $opts)
+    } else {
+      $pre-hook $@cmd
+      if (and (eq $opts []) (has-key $def -options)) {
+        opts = $def[-options]
+      }
+      del def[-options]
+      result = [(-expand-subcommands &opts=$opts $def $@cmd)]
+      $post-hook $result $@cmd
+      put $@result
+    }
   }
 }
