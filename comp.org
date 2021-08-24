@@ -430,10 +430,12 @@ fn extract-opts [@cmd
       }
     }
     if (or (has-key $opt short) (has-key $opt long)) {
-      if (and (has-key $opt desc) $first-sentence) {
-        opt[desc] = (re:replace '\. .*$|\.\s*$|\s*\(.*$' '' $opt[desc])
+      if (has-key $opt desc) {
+        if $first-sentence {
+          opt[desc] = (re:replace '\. .*$|\.\s*$|\s*\(.*$' '' $opt[desc])
+        } 
+        opt[desc] = (re:replace '\s+' ' ' $opt[desc])
       }
-      opt[desc] = (re:replace '\s+' ' ' $opt[desc])
       put $opt
     }
   }
