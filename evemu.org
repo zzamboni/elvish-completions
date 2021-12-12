@@ -14,43 +14,43 @@ Completions for [[https://gitlab.freedesktop.org/libevdev/evtest][=evtest=]] and
 All of these commands operate on evdev nodes, contained in =/dev/input/=. Each represents an input device (or part of one), with a name. We can retrieve that name from sysfs and show it next to the completion.
 
 #+begin_src elvish
-use ./comp
-use str
+  use ./comp
+  use str
 
--complete-dev = {
-  evdev-dir = '/dev/input/'
-  ls $evdev-dir | each [item]{
-    if (str:has-prefix $item 'event') {
-      path = $evdev-dir$item
-      name = (cat /sys/class/input/$item/device/name)
-      edit:complex-candidate &display=$path" ("$name")" $path
+  var -complete-dev = {
+    var evdev-dir = '/dev/input/'
+    ls $evdev-dir | each {|item|
+      if (str:has-prefix $item 'event') {
+        var path = $evdev-dir$item
+        var name = (cat /sys/class/input/$item/device/name)
+        edit:complex-candidate &display=$path" ("$name")" $path
+      }
     }
   }
-}
 #+end_src
 
 Some commands take axis or key constants defined in the Kernel's =input-event-codes.h=, each prefixed with a type (e.g. =KEY_A=, =BTN_LEFT=, or =REL_X=). We can list them with some simple matching against the header file.
 
 #+begin_src elvish
-ev-code-header = /usr/include/linux/input-event-codes.h
+  var ev-code-header = /usr/include/linux/input-event-codes.h
 
-fn -defs-with-prefix [prefix]{
-  grep "#define "$prefix"_" $ev-code-header |
-      eawk [line @fields]{ put $fields[1] }
-}
+  fn -defs-with-prefix {|prefix|
+    grep "#define "$prefix"_" $ev-code-header |
+        eawk {|line @fields| put $fields[1] }
+  }
 #+end_src
 
 Next we'll need a method to list all the constants corresponding to a particular event type, the name of which is prefixed by =EV_=. (The =KEY= type also includes the =BTN= constants.)
 
 #+begin_src elvish
-fn -ev-codes-for-type [type]{
-  if (eq $type 'EV_KEY') {
-    -defs-with-prefix 'KEY'
-    -defs-with-prefix 'BTN'
-  } else {
-    -defs-with-prefix (str:trim-prefix $type 'EV_')
+  fn -ev-codes-for-type {|type|
+    if (eq $type 'EV_KEY') {
+      -defs-with-prefix 'KEY'
+      -defs-with-prefix 'BTN'
+    } else {
+      -defs-with-prefix (str:trim-prefix $type 'EV_')
+    }
   }
-}
 #+end_src
 
 ** =evtest=
@@ -58,29 +58,29 @@ fn -ev-codes-for-type [type]{
 =evtest= only has two options.
 
 #+begin_src elvish
--evtest-opts = [
-  [&long="grab"  &desc="grab the device for exclusive access"]
-  [&long="query" &desc="query a specific single-bit event code"]
-]
+  var -evtest-opts = [
+    [&long="grab"  &desc="grab the device for exclusive access"]
+    [&long="query" &desc="query a specific single-bit event code"]
+  ]
 #+end_src
 
 ...but =--query= is a little tricky, as it takes two arguments: an event type (one with binary states), and a code of that type. We have to use completer functions that look at the other arguments by index.
 
 #+begin_src elvish
--complete-evtest-type = [@cmd]{
-  if (eq $cmd[1] '--query') {
-    all [EV_KEY EV_SW EV_SND EV_LED]
+  var -complete-evtest-type = {|@cmd|
+    if (eq $cmd[1] '--query') {
+      all [EV_KEY EV_SW EV_SND EV_LED]
+    }
   }
-}
 
--complete-evtest-code = [@cmd]{
-  if (eq $cmd[1] '--query') {
-    -ev-codes-for-type $cmd[3]
+  var -complete-evtest-code = {|@cmd|
+    if (eq $cmd[1] '--query') {
+      -ev-codes-for-type $cmd[3]
+    }
   }
-}
 
-edit:completion:arg-completer[evtest] = (
-    comp:sequence &opts=$-evtest-opts [$-complete-dev $-complete-evtest-type $-complete-evtest-code])
+  set edit:completion:arg-completer[evtest] = (
+      comp:sequence &opts=$-evtest-opts [$-complete-dev $-complete-evtest-type $-complete-evtest-code])
 #+end_src
 
 ** =evemu-record= and =evemu-describe=
@@ -88,21 +88,21 @@ edit:completion:arg-completer[evtest] = (
 These commands both take the same simple set of arguments.
 
 #+begin_src elvish
--autorestart-opt = [
-  &long="autorestart"
-  &desc="Terminate the current recording after <s> seconds of inactivity and restart a new recording"
-  &arg-required=$true
-]
+  var -autorestart-opt = [
+    &long="autorestart"
+    &desc="Terminate the current recording after <s> seconds of inactivity and restart a new recording"
+    &arg-required=$true
+  ]
 
--record-and-describe-comp = (comp:sequence &opts=[$-autorestart-opt] [$-complete-dev $comp:files~])
-edit:completion:arg-completer[evemu-describe] = $-record-and-describe-comp
-edit:completion:arg-completer[evemu-record] = $-record-and-describe-comp
+  var -record-and-describe-comp = (comp:sequence &opts=[$-autorestart-opt] [$-complete-dev $comp:files~])
+  set edit:completion:arg-completer[evemu-describe] = $-record-and-describe-comp
+  set edit:completion:arg-completer[evemu-record] = $-record-and-describe-comp
 #+end_src
 
 ** =evemu-device=
 
 #+begin_src elvish
-edit:completion:arg-completer[evemu-device] = $edit:complete-filename~
+  set edit:completion:arg-completer[evemu-device] = $edit:complete-filename~
 #+end_src
 
 ** =evemu-play=
@@ -110,10 +110,10 @@ edit:completion:arg-completer[evemu-device] = $edit:complete-filename~
 This command takes either an evdev device or a recording file.
 
 #+begin_src elvish
-edit:completion:arg-completer[evemu-play] = (comp:sequence [[arg]{
-  $-complete-dev
-  comp:files $arg
-}])
+  set edit:completion:arg-completer[evemu-play] = (comp:sequence [{|arg|
+    $-complete-dev
+    comp:files $arg
+  }])
 #+end_src
 
 ** =evemu-event=
@@ -121,25 +121,25 @@ edit:completion:arg-completer[evemu-play] = (comp:sequence [[arg]{
 This command, for generating single events, has an argument that could take any event code, so we put all the possible event types (as well as =BTN_=, an additional prefix for the =EV_KEY= type) into a regex with which to retrieve the constants.
 
 #+begin_src elvish
--all-ev-codes = {
-  prefix-pattern = (-defs-with-prefix 'EV' | each [s]{ str:trim-prefix $s 'EV_' } | str:join '\|')
-  -defs-with-prefix '\('$prefix-pattern'\|BTN\)'
-}
+  var -all-ev-codes = {
+    var prefix-pattern = (-defs-with-prefix 'EV' | each {|s| str:trim-prefix $s 'EV_' } | str:join '\|')
+    -defs-with-prefix '\('$prefix-pattern'\|BTN\)'
+  }
 
--event-opts = [
-  [&long="sync" &desc="generate an EV_SYN event after the event"]
-  [&long="type"
-   &desc="the type of event to generate"
-   &arg-required=$true
-   &arg-completer={ -defs-with-prefix 'EV' }]
-  [&long="code"
-   &desc="the event code"
-   &arg-required=$true
-   &arg-completer=$-all-ev-codes]
-  [&long="value"
-   &desc="the event value"
-   &arg-required=$true]
-]
+  var -event-opts = [
+    [&long="sync" &desc="generate an EV_SYN event after the event"]
+    [&long="type"
+     &desc="the type of event to generate"
+     &arg-required=$true
+     &arg-completer={ -defs-with-prefix 'EV' }]
+    [&long="code"
+     &desc="the event code"
+     &arg-required=$true
+     &arg-completer=$-all-ev-codes]
+    [&long="value"
+     &desc="the event value"
+     &arg-required=$true]
+  ]
 
-edit:completion:arg-completer[evemu-event] = (comp:sequence &opts=$-event-opts [$-complete-dev])
+  set edit:completion:arg-completer[evemu-event] = (comp:sequence &opts=$-event-opts [$-complete-dev])
 #+end_src
