@@ -5,16 +5,16 @@ use ./git
 use re
 
 # Return all elements in $l1 except those who are already in $l2
-fn -all-except [l1 l2]{
-  each [x]{ if (not (has-value $l2 $x)) { put $x } } $l1
+fn -all-except {|l1 l2|
+  each {|x| if (not (has-value $l2 $x)) { put $x } } $l1
 }
 
-fn vcsh-completer [cmd @rest]{
-  n = (count $rest)
-  repos = [(vcsh list)]
+fn vcsh-completer {|cmd @rest|
+  var n = (count $rest)
+  var repos = [(vcsh list)]
   if (eq $n 1) {
     # Extract valid commands and options from the vcsh help message itself
-    cmds = [(vcsh 2>&1 | grep '^   [a-z-]' | grep -v ':$' | awk '{print $1}')]
+    var cmds = [(vcsh 2>&1 | grep '^   [a-z-]' | grep -v ':$' | awk '{print $1}')]
     put $@repos $@cmds
   } elif (and (> $n 1) (has-value $repos $rest[0])) {
     put (git:git-completer $cmd" "$rest[0] (all $rest[1..]))
@@ -37,4 +37,4 @@ fn vcsh-completer [cmd @rest]{
   }
 }
 
-edit:completion:arg-completer[vcsh] = $vcsh-completer~
+set edit:completion:arg-completer[vcsh] = $vcsh-completer~

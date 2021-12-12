@@ -64,10 +64,10 @@ Included completions:
 Load the completion framework and other libraries.
 
 #+begin_src elvish
-use ./comp
-use re
-use path
-use str
+  use ./comp
+  use re
+  use path
+  use str
 #+end_src
 
 ** use
@@ -75,24 +75,24 @@ use str
 Completer for the =use= command, which includes all modules in =~/.elvish/lib/=, but also allows completing relative paths starting with =./= or =../=.
 
 #+begin_src elvish
-edit:completion:arg-completer[use] = (
-  comp:sequence [
-    [stem]{
-      if (not (str:has-prefix $stem '.')) {
-        put './' '../'
-        put ~/.elvish/lib/**[nomatch-ok].elv | each [m]{
-          if (not (path:is-dir $m)) {
-            re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
+  set edit:completion:arg-completer[use] = (
+    comp:sequence [
+      {|stem|
+        if (not (str:has-prefix $stem '.')) {
+          put './' '../'
+          put ~/.elvish/lib/**[nomatch-ok].elv | each {|m|
+            if (not (path:is-dir $m)) {
+              re:replace ~/.elvish/lib/'(.*).elv' '$1' $m
+            }
           }
+        } else {
+          if (eq $stem ".") { set stem = "./" }
+          if (eq $stem "..") { set stem = "../" }
+          comp:files $stem &regex='.*\.elv' &transform={|s| re:replace '\.elv$' '' $s }
         }
-      } else {
-        if (eq $stem ".") { stem = "./" }
-        if (eq $stem "..") { stem = "../" }
-        comp:files $stem &regex='.*\.elv' &transform=[s]{ re:replace '\.elv$' '' $s }
       }
-    }
-  ]
-)
+    ]
+  )
 #+end_src
 
 ** epm
@@ -100,15 +100,15 @@ edit:completion:arg-completer[use] = (
 Completers for the =epm= commands.
 
 #+begin_src elvish
-use epm
+  use epm
 
-epm-completer-one  = (comp:sequence [ $epm:list~ ])
-epm-completer-many = (comp:sequence [ $epm:list~ ...])
-edit:completion:arg-completer[epm:query]     = $epm-completer-one
-edit:completion:arg-completer[epm:metadata]  = $epm-completer-one
-edit:completion:arg-completer[epm:dest]      = $epm-completer-one
-edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
-edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
+  var epm-completer-one  = (comp:sequence [ $epm:list~ ])
+  var epm-completer-many = (comp:sequence [ $epm:list~ ...])
+  set edit:completion:arg-completer[epm:query]     = $epm-completer-one
+  set edit:completion:arg-completer[epm:metadata]  = $epm-completer-one
+  set edit:completion:arg-completer[epm:dest]      = $epm-completer-one
+  set edit:completion:arg-completer[epm:uninstall] = $epm-completer-many
+  set edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
 #+end_src
 
 ** elvish
@@ -116,8 +116,8 @@ edit:completion:arg-completer[epm:upgrade]   = $epm-completer-many
 Completer for the =elvish= command.
 
 #+begin_src elvish
-edit:completion:arg-completer[elvish] = (comp:sequence ^
-  &opts= { elvish -help | comp:extract-opts &fold } ^
-  [ [arg]{ comp:files $arg &regex='\.elv$' } ] ^
-)
+  set edit:completion:arg-completer[elvish] = (comp:sequence ^
+    &opts= { elvish -help | comp:extract-opts &fold } ^
+    [ {|arg| comp:files $arg &regex='\.elv$' } ] ^
+  )
 #+end_src

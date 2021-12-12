@@ -1,13 +1,13 @@
 use str
 
-fn -comma-sep-list [options arg]{
-  prefix = $arg[..(+ 1 (str:last-index $arg ','))]
+fn -comma-sep-list {|options arg|
+  var prefix = $arg[..(+ 1 (str:last-index $arg ','))]
   for option [(keys $options)] {
     edit:complex-candidate &display=$options[$option] $prefix$option
   }
 }
 
--convs = [
+var -convs = [
   &ascii=    "ascii      (from EBCDIC to ASCII)"
   &ebcdic=   "ebcdic     (from ASCII to EBCDIC)"
   &ibm=      "ibm        (from ASCII to alternate EBCDIC)"
@@ -26,7 +26,7 @@ fn -comma-sep-list [options arg]{
   &fsync=    "fsync      (likewise, but also write metadata)"
 ]
 
--flags = [
+var -flags = [
   &append=     "append       (append mode (makes sense only for output; conv=notrunc suggested))"
   &direct=     "direct       (use direct I/O for data)"
   &directory=  "directory    (fail unless a directory)"
@@ -43,31 +43,31 @@ fn -comma-sep-list [options arg]{
   &seek_bytes= "seek_bytes   (treat 'seek=N' as a byte count (oflag only))"
 ]
 
--operands = [
+var -operands = [
   &bs=    [&desc="read and write up to BYTES bytes at a time (default: 512); overrides ibs and obs"]
   &cbs=   [&desc="convert BYTES bytes at a time"]
   &conv=  [&desc="convert the file as per the comma separated symbol list"
-           &comp=[arg]{ -comma-sep-list $-convs $arg }]
+           &comp={|arg| -comma-sep-list $-convs $arg }]
   &count= [&desc="copy only N input blocks"]
   &ibs=   [&desc="read up to BYTES bytes at a time (default: 512)"]
   &if=    [&desc="read from FILE instead of stdin"
            &comp=$edit:complete-filename~]
   &iflag= [&desc="read as per the comma separated symbol list"
-           &comp=[arg]{ -comma-sep-list $-flags $arg }]
+           &comp={|arg| -comma-sep-list $-flags $arg }]
   &obs=   [&desc="write BYTES bytes at a time (default: 512)"]
   &of=    [&desc="write to FILE instead of stdout"
            &comp=$edit:complete-filename~]
   &oflag= [&desc="write as per the comma separated symbol list"
-           &comp=[arg]{ -comma-sep-list $-flags $arg }]
+           &comp={|arg| -comma-sep-list $-flags $arg }]
   &seek=  [&desc="skip N obs-sized blocks at start of output"]
   &skip=  [&desc="skip N ibs-sized blocks at start of input"]
   &status=[&desc="The LEVEL of information to print to stderr"
-           &comp=[arg]{ all [none noxfer progress] }]
+           &comp={|arg| all [none noxfer progress] }]
 ]
 
-fn -completer [@cmd]{
-  last-arg = $cmd[-1]
-  op-length = (str:index $last-arg '=')
+fn -completer {|@cmd|
+  var last-arg = $cmd[-1]
+  var op-length = (str:index $last-arg '=')
 
 if (== -1 $op-length) {
   for op [(keys $-operands)] {
@@ -78,11 +78,11 @@ if (== -1 $op-length) {
   edit:complex-candidate &display="--version  (output version information and exit)" '--version'
 
 } else {
-  op = $last-arg[..$op-length]
-  arg = $last-arg[(+ 1 $op-length)..]
+  var op = $last-arg[..$op-length]
+  var arg = $last-arg[(+ 1 $op-length)..]
 
   if (has-key $-operands[$op] comp) {
-    $-operands[$op][comp] $arg | each [candidate]{
+    $-operands[$op][comp] $arg | each {|candidate|
 
 if (eq (kind-of $candidate) map) {
           put (edit:complex-candidate $op'='$candidate[stem] &display=$candidate[display])
@@ -94,4 +94,4 @@ if (eq (kind-of $candidate) map) {
   }
 }
 
-edit:completion:arg-completer[dd] = $-completer~
+set edit:completion:arg-completer[dd] = $-completer~

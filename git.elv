@@ -4,35 +4,35 @@ use str
 use github.com/muesli/elvish-libs/git
 use github.com/zzamboni/elvish-modules/util
 
-completions = [&]
+var completions = [&]
 
-status = [&]
+var status = [&]
 
-git-arg-completer = { }
+var git-arg-completer = { }
 
-git-command = git
+var git-command = git
 
-modified-style  = yellow
-untracked-style = red
-tracked-style   = ''
-branch-style    = blue
-remote-style    = cyan
-unmerged-style  = magenta
+var modified-style  = yellow
+var untracked-style = red
+var tracked-style   = ''
+var branch-style    = blue
+var remote-style    = cyan
+var unmerged-style  = magenta
 
-fn -run-git [@rest]{
-  gitcmds = [$git-command]
+fn -run-git {|@rest|
+  var gitcmds = [$git-command]
   if (eq (kind-of $git-command) string) {
-    gitcmds = [(re:split " " $git-command)]
+    set gitcmds = [(re:split " " $git-command)]
   }
-  cmd = $gitcmds[0]
+  var cmd = $gitcmds[0]
   if (eq (kind-of $cmd) string) {
-    cmd = (external $cmd)
+    set cmd = (external $cmd)
   }
   $cmd (all $gitcmds[1..]) $@rest
 }
 
-fn -git-opts [@cmd]{
-  _ = ?(-run-git $@cmd -h 2>&1) | drop 1 | if (eq $cmd []) {
+fn -git-opts {|@cmd|
+  set _ = ?(-run-git $@cmd -h 2>&1) | drop 1 | if (eq $cmd []) {
     comp:extract-opts &fold=$true &regex='--(\w[\w-]*)' &regex-map=[&long=1]
   } else {
     comp:extract-opts &fold=$true
@@ -43,36 +43,36 @@ fn MODIFIED      { all $status[local-modified] | comp:decorate &style=$modified-
 fn UNTRACKED     { all $status[untracked] | comp:decorate &style=$untracked-style }
 fn UNMERGED      { all $status[unmerged] | comp:decorate &style=$unmerged-style }
 fn MOD-UNTRACKED { MODIFIED; UNTRACKED }
-fn TRACKED       { _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
-fn BRANCHES      [&all=$false &branch=$true]{
-  -allarg = []
-  -branch = ''
-  if $all { -allarg = ['--all'] }
-  if $branch { -branch = ' (branch)' }
-  _ = ?(-run-git branch --list (all $-allarg) --format '%(refname:short)' 2>&- |
+fn TRACKED       { set _ = ?(-run-git ls-files 2>&-) | comp:decorate &style=$tracked-style }
+fn BRANCHES      {|&all=$false &branch=$true|
+  var -allarg = []
+  var -branch = ''
+  if $all { set -allarg = ['--all'] }
+  if $branch { set -branch = ' (branch)' }
+  set _ = ?(-run-git branch --list (all $-allarg) --format '%(refname:short)' 2>&- |
   comp:decorate &display-suffix=$-branch &style=$branch-style)
 }
 fn REMOTE-BRANCHES {
-  _ = ?(-run-git branch --list --remote --format '%(refname:short)' 2>&- |
+  set _ = ?(-run-git branch --list --remote --format '%(refname:short)' 2>&- |
     grep -v HEAD |
-    each [branch]{ re:replace 'origin/' '' $branch } |
+    each {|branch| re:replace 'origin/' '' $branch } |
   comp:decorate &display-suffix=' (remote branch)' &style=$branch-style)
 }
-fn REMOTES       { _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
-fn STASHES       { _ = ?(-run-git stash list 2>&- | each [l]{ put [(re:split : $l)][0] } ) }
+fn REMOTES       { set _ = ?(-run-git remote 2>&- | comp:decorate &display-suffix=' (remote)' &style=$remote-style ) }
+fn STASHES       { set _ = ?(-run-git stash list 2>&- | each {|l| put [(re:split : $l)][0] } ) }
 
-git-completions = [
-  &add=           [ [stem]{ MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]
+var git-completions = [
+  &add=           [ {|stem| MOD-UNTRACKED; UNMERGED; comp:dirs $stem } ... ]
   &stage=         add
   &checkout=      [ { MODIFIED; BRANCHES } ... ]
   &switch=        [ { $BRANCHES~ &branch=$false; REMOTE-BRANCHES } ]
-  &mv=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
-  &rm=            [ [stem]{ TRACKED; comp:dirs $stem } ... ]
+  &mv=            [ {|stem| TRACKED; comp:dirs $stem } ... ]
+  &rm=            [ {|stem| TRACKED; comp:dirs $stem } ... ]
   &diff=          [ { MODIFIED; BRANCHES  } ... ]
   &push=          [ $REMOTES~ $BRANCHES~ ]
   &pull=          [ $REMOTES~ { BRANCHES &all } ]
   &merge=         [ $BRANCHES~ ... ]
-  &init=          [ [stem]{ put "."; comp:dirs $stem } ]
+  &init=          [ {|stem| put "."; comp:dirs $stem } ]
   &branch=        [ $BRANCHES~ ... ]
   &rebase=        [ { $BRANCHES~ &all } ... ]
   &cherry=        [ { $BRANCHES~ &all } $BRANCHES~ $BRANCHES~ ]
@@ -102,32 +102,32 @@ git-completions = [
 ]
 
 fn init {
-  completions = [&]
-  -run-git help -a --no-verbose | eawk [line @f]{ if (re:match '^  [a-z]' $line) { put $@f } } | each [c]{
-    seq = [ $comp:files~ ... ]
+  set completions = [&]
+  -run-git help -a --no-verbose | eawk {|line @f| if (re:match '^  [a-z]' $line) { put $@f } } | each {|c|
+    var seq = [ $comp:files~ ... ]
     if (has-key $git-completions $c) {
-      seq = $git-completions[$c]
+      set seq = $git-completions[$c]
     }
     if (eq (kind-of $seq) string) {
-      completions[$c] = $seq
+      set completions[$c] = $seq
     } elif (eq (kind-of $seq) map) {
-      completions[$c] = (comp:subcommands $seq)
+      set completions[$c] = (comp:subcommands $seq)
     } else {
-      completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
+      set completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
     }
   }
-  -run-git config --list | each [l]{ re:find '^alias\.([^=]+)=(.*)$' $l } | each [m]{
-    alias target = $m[groups][1 2][text]
+  -run-git config --list | each {|l| re:find '^alias\.([^=]+)=(.*)$' $l } | each {|m|
+    var alias target = $m[groups][1 2][text]
     if (has-key $completions $target) {
-      completions[$alias] = $target
+      set completions[$alias] = $target
     } else {
-      completions[$alias] = (comp:sequence [])
+      set completions[$alias] = (comp:sequence [])
     }
   }
-  git-arg-completer = (comp:subcommands $completions ^
-    &pre-hook=[@_]{ status = (git:status) } &opts={ -git-opts }
+  set git-arg-completer = (comp:subcommands $completions ^
+    &pre-hook={|@_| set status = (git:status) } &opts={ -git-opts }
   )
-  edit:completion:arg-completer[git] = $git-arg-completer
+  set edit:completion:arg-completer[git] = $git-arg-completer
 }
 
 init

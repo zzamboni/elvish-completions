@@ -1,7 +1,7 @@
 use github.com/zzamboni/elvish-completions/git
 use github.com/zzamboni/elvish-modules/test
 
-cmds = ($git:git-arg-completer git '')
+var cmds = ($git:git-arg-completer git '')
 
 (test:set github.com/zzamboni/elvish-completions/git
   (test:set "common top-level commands"
