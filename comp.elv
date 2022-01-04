@@ -10,8 +10,7 @@ fn -debugmsg {|@args &color=blue|
   }
 }
 
-fn decorate {|@input &code-suffix='' &display-suffix='' &suffix='' &style=''|
-  # &style is currently ignored because it is not supported by Elvish
+fn decorate {|@input &code-suffix='' &display-suffix='' &suffix='' &style=$nil |
   if (== (count $input) 0) {
     set input = [(all)]
   }
@@ -20,7 +19,11 @@ fn decorate {|@input &code-suffix='' &display-suffix='' &suffix='' &style=''|
     set code-suffix = $suffix
   }
   each {|k|
-    edit:complex-candidate &code-suffix=$code-suffix &display=$k$display-suffix $k
+    var k-display = $k
+    if $style {
+      set k-display = (styled $k $style)
+    }
+    edit:complex-candidate &code-suffix=$code-suffix &display=$k-display$display-suffix $k
   } $input
 }
 

@@ -318,19 +318,22 @@ Internal function to print debug messages if the =$comp:debug= variable is set.
 =comp:decorate= maps its input through =edit:complex-candidate= with the given options. Can be passed the same options as [[https://elvish.io/ref/edit.html#argument-completer][edit:complex-candidate]] except for =&display=, which does not make sense when multiple inputs are provided. In addition, if =&suffix= is specified, it is used to set both =&display-suffix= and =&code-suffix=.
 
 #+begin_src elvish
-  fn decorate {|@input &code-suffix='' &display-suffix='' &suffix='' &style=''|
-    # &style is currently ignored because it is not supported by Elvish
-    if (== (count $input) 0) {
-      set input = [(all)]
-    }
-    if (not-eq $suffix '') {
-      set display-suffix = $suffix
-      set code-suffix = $suffix
-    }
-    each {|k|
-      edit:complex-candidate &code-suffix=$code-suffix &display=$k$display-suffix $k
-    } $input
+fn decorate {|@input &code-suffix='' &display-suffix='' &suffix='' &style=$nil |
+  if (== (count $input) 0) {
+    set input = [(all)]
   }
+  if (not-eq $suffix '') {
+    set display-suffix = $suffix
+    set code-suffix = $suffix
+  }
+  each {|k|
+    var k-display = $k
+    if $style {
+      set k-display = (styled $k $style)
+    }
+    edit:complex-candidate &code-suffix=$code-suffix &display=$k-display$display-suffix $k
+  } $input
+}
 #+end_src
 
 *** comp:empty
