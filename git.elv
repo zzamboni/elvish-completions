@@ -14,7 +14,7 @@ var git-command = git
 
 var modified-style  = yellow
 var untracked-style = red
-var tracked-style   = ''
+var tracked-style   = $nil
 var branch-style    = blue
 var remote-style    = cyan
 var unmerged-style  = magenta

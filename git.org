@@ -40,7 +40,7 @@ Several components are colorized, you can configure the styles by setting these 
 #+begin_src elvish :noweb-ref git-completion-styles
 var modified-style  = yellow
 var untracked-style = red
-var tracked-style   = ''
+var tracked-style   = $nil
 var branch-style    = blue
 var remote-style    = cyan
 var unmerged-style  = magenta
@@ -101,7 +101,7 @@ The =$*-style= variables contains the style (as per =styled=) to use for differe
 #+begin_src elvish :noweb yes
   var modified-style  = yellow
   var untracked-style = red
-  var tracked-style   = ''
+  var tracked-style   = $nil
   var branch-style    = blue
   var remote-style    = cyan
   var unmerged-style  = magenta
