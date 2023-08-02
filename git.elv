@@ -116,7 +116,7 @@ fn init {
       set completions[$c] = (comp:sequence $seq &opts={ -git-opts $c })
     }
   }
-  -run-git config --list | each {|l| re:find '^alias\.([^=]+)=(.*)$' $l } | each {|m|
+  -run-git config --list | each {|l| re:find '^alias\.([^=]+)=(\S+)' $l } | each {|m|
     var alias target = $m[groups][1 2][text]
     if (has-key $completions $target) {
       set completions[$alias] = $target
