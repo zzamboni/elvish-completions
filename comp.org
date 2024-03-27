@@ -181,7 +181,7 @@ vagrant-completions = [
       &add= (comp:sequence [] \
         &opts= { vagrant box add -h | comp:extract-opts }
       )
-      &remove= (comp:sequence [ { vagrant box list | eawk [_ @f]{ put $f[0] } } ... ] \
+      &remove= (comp:sequence [ { vagrant box list | re:awk [_ @f]{ put $f[0] } } ... ] \
         &opts= { vagrant box remove -h | comp:extract-opts }
       )
 ])]

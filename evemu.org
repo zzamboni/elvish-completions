@@ -36,7 +36,7 @@ Some commands take axis or key constants defined in the Kernel's =input-event-co
 
   fn -defs-with-prefix {|prefix|
     grep "#define "$prefix"_" $ev-code-header |
-        eawk {|line @fields| put $fields[1] }
+        re:awk {|line @fields| put $fields[1] }
   }
 #+end_src
 

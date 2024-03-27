@@ -1,5 +1,6 @@
 use ./comp
 use str
+use re
 
 var -complete-dev = {
   var evdev-dir = '/dev/input/'
@@ -16,7 +17,7 @@ var ev-code-header = /usr/include/linux/input-event-codes.h
 
 fn -defs-with-prefix {|prefix|
   grep "#define "$prefix"_" $ev-code-header |
-      eawk {|line @fields| put $fields[1] }
+      re:awk {|line @fields| put $fields[1] }
 }
 
 fn -ev-codes-for-type {|type|
