@@ -7,7 +7,7 @@ var config-files = [ ~/.ssh/config /etc/ssh/ssh_config /etc/ssh_config ]
 fn -ssh-hosts {
   var hosts = [&]
   all $config-files | each {|file|
-    set _ = ?(cat $file 2>&-) | eawk {|_ @f|
+    set _ = ?(cat $file 2>&-) | re:awk {|_ @f|
       if (re:match '^(?i)host$' $f[0]) {
         all $f[1..] | each {|p|
           if (not (re:match '[*?!]' $p)) {
@@ -21,7 +21,7 @@ fn -gen-ssh-options {
   if (eq $-ssh-options []) {
     set -ssh-options = [(
         set _ = ?(cat (man -w ssh_config 2>&-)) |
-        eawk {|l @f| if (re:match '^\.It Cm' $l) { put $f[2] } } |
+        re:awk {|l @f| if (re:match '^\.It Cm' $l) { put $f[2] } } |
         comp:decorate &suffix='='
     )]
   }
