@@ -173,6 +173,8 @@ edit:completion:arg-completer[brew] = (comp:subcommands &opts= [ version ] $brew
 *Tip:* note that the values of =&opts= are functions (e.g. ={ vagrant-up -h | comp:extract-opts }=) instead of arrays (e.g. =( vagrant up -h | comp:extract-opts )=). As mentioned in Example #5, both would be valid, but in the latter case they are all initialized at load time (when the data structure is defined), which might introduce a delay (particularly with more command definitions). By using functions the options are only extracted at runtime when the completion is requested. For further optimization, =vagrant-opts= could be made to memoize the values so that the delay only occurs the first time.
 
 #+begin_src elvish
+use re
+
 vagrant-completions = [
   &up= (comp:sequence [] \
     &opts= { vagrant up -h | comp:extract-opts }
@@ -181,7 +183,7 @@ vagrant-completions = [
       &add= (comp:sequence [] \
         &opts= { vagrant box add -h | comp:extract-opts }
       )
-      &remove= (comp:sequence [ { vagrant box list | eawk [_ @f]{ put $f[0] } } ... ] \
+      &remove= (comp:sequence [ { vagrant box list | re:awk [_ @f]{ put $f[0] } } ... ] \
         &opts= { vagrant box remove -h | comp:extract-opts }
       )
 ])]

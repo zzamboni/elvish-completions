@@ -103,7 +103,7 @@ var git-completions = [
 
 fn init {
   set completions = [&]
-  -run-git help -a --no-verbose | eawk {|line @f| if (re:match '^  [a-z]' $line) { put $@f } } | each {|c|
+  -run-git help -a --no-verbose | re:awk {|line @f| if (re:match '^  [a-z]' $line) { put $@f } } | each {|c|
     var seq = [ $comp:files~ ... ]
     if (has-key $git-completions $c) {
       set seq = $git-completions[$c]
