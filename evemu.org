@@ -15,6 +15,7 @@ All of these commands operate on evdev nodes, contained in =/dev/input/=. Each r
 
 #+begin_src elvish
   use ./comp
+  use re
   use str
 
   var -complete-dev = {
@@ -36,7 +37,7 @@ Some commands take axis or key constants defined in the Kernel's =input-event-co
 
   fn -defs-with-prefix {|prefix|
     grep "#define "$prefix"_" $ev-code-header |
-        eawk {|line @fields| put $fields[1] }
+        re:awk {|line @fields| put $fields[1] }
   }
 #+end_src
 
